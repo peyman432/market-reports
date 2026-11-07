@@ -5,6 +5,7 @@ tg_from_site.py — ارسال نمودارها و گزارش‌های بازا�
 
 اجرای محلی برای تست (بدون ارسال):   python tg_from_site.py --dry --file data.json
 اجرای واقعی بیرون از ساعت کاری:      python tg_from_site.py --force
+اجرای یک جلسه‌ی کامل بازار:          python tg_from_site.py --loop   (تا پایان ساعت کاری هر ۵ دقیقه؛ در GitHub Actions)
 
 متغیرهای محیطی:
   TG_TOKEN, TG_CHAT          توکن ربات و شناسه‌ی کانال (در GitHub به‌صورت Secrets)
@@ -794,12 +795,12 @@ def build_items(d):
     return items
 
 
-def main():
-    for s in (sys.stdout, sys.stderr):
-        try:
-            s.reconfigure(encoding="utf-8")
-        except Exception:
-            pass
+_font_ready = False
+
+
+def cycle():
+    """یک دور کامل: خواندن data.json ← ساخت نمودارها و متن‌ها ← ارسال/ویرایش در تلگرام. خروجی: تعداد موارد ناموفق"""
+    global _font_ready
     force, dry = ("--force" in sys.argv or RESET), "--dry" in sys.argv
     now = datetime.now(TZ)
     if not (force or dry) and not (WIN_S <= now.strftime("%H:%M") <= WIN_E):
@@ -818,7 +819,9 @@ def main():
         if age > MAX_AGE:
             skip(f"داده‌ی سایت قدیمی است (آخرین به‌روزرسانی: {d.get('updated')} — {age / 60:.0f} دقیقه پیش). بازار تعطیل است یا publisher.py روی کامپیوتر شما اجرا نمی‌شود")
             return
-    setup_font()
+    if not _font_ready:
+        setup_font()
+        _font_ready = True
     items = build_items(d)
     if dry:
         out = os.path.join(BASE, "dry_out")
@@ -878,8 +881,49 @@ def main():
                 log(f"❌ {key}: {e}")
                 print(f"::error title=ارسال {key} ناموفق بود::{e}", flush=True)
     log(f"پایان — موفق: {ok} | ناموفق: {len(errs)}" + (f" ({', '.join(errs)})" if errs else ""))
-    if errs:
-        sys.exit(1)           # اجرا قرمز می‌شود تا خطا از چشم پنهان نماند
+    return len(errs)
+
+
+def _hm_to_min(hm):
+    return int(hm[:2]) * 60 + int(hm[3:5])
+
+
+def main():
+    for s_ in (sys.stdout, sys.stderr):
+        try:
+            s_.reconfigure(encoding="utf-8")
+        except Exception:
+            pass
+    if "--loop" not in sys.argv:                  # اجرای تکی (تست / force / reset)
+        if cycle():
+            sys.exit(1)                           # اجرا قرمز می‌شود تا خطا از چشم پنهان نماند
+        return
+    # حالت جلسه: یک اجرا تمام ساعت کاری را خودش هر EVERY ثانیه می‌چرخد (بدون وابستگی به زمان‌بند GitHub)
+    every = int(os.environ.get("TG_EVERY", 300))
+    log(f"حالت جلسه: از {WIN_S} تا {WIN_E} هر {every // 60} دقیقه")
+    n = 0
+    while True:
+        now = datetime.now(TZ)
+        hm = now.strftime("%H:%M")
+        if hm > WIN_E:
+            log(f"⏹ پایان ساعت کاری ({WIN_E}) — خروج پس از {n} دور")
+            return
+        if hm < WIN_S:
+            wait = (_hm_to_min(WIN_S) - _hm_to_min(hm)) * 60 - now.second
+            log(f"⏳ تا شروع ساعت کاری ({WIN_S}) صبر می‌کنم: {wait // 60} دقیقه")
+            time.sleep(max(5, min(wait, 300)))
+            continue
+        t0 = time.time()
+        try:
+            cycle()
+            n += 1
+        except SystemExit:
+            raise
+        except Exception:
+            log("❌ خطای پیش‌بینی‌نشده در این دور؛ دور بعد دوباره تلاش می‌شود")
+            traceback.print_exc()
+        time.sleep(max(5, every - (time.time() - t0)))
+
 
 if __name__ == "__main__":
     main()
