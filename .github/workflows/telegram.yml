@@ -1,0 +1,62 @@
+name: telegram-publisher
+
+on:
+  schedule:
+    # هر ۵ دقیقه؛ 05:00 تا 09:55 UTC = 08:30 تا 13:25 به وقت تهران (بازه‌ی دقیق را خود برنامه بررسی می‌کند)
+    - cron: "*/5 5-9 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "ارسال اجباری (بدون توجه به ساعت و تازگی داده)"
+        type: boolean
+        default: false
+      reset:
+        description: "شروع از نو: پیام‌های قبلی ربات پاک و همه‌ی پیام‌ها به ترتیب دوباره ارسال شوند (اجباری هم هست)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: telegram
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: فونت فارسی
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq fonts-vazirmatn || sudo apt-get install -y -qq fonts-noto-core
+
+      - run: pip install -r requirements.txt
+
+      # شناسه‌ی پیام‌های امروز (برای ویرایش به‌جای ارسال مجدد)
+      - uses: actions/cache/restore@v4
+        with:
+          path: tg_state.json
+          key: tg-state-none
+          restore-keys: tg-state-
+
+      - name: انتشار در تلگرام
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT }}
+          SITE_URL: https://peyman432.github.io/market-reports/data.json
+        run: python tg_from_site.py ${{ inputs.force && '--force' || '' }} ${{ inputs.reset && '--reset' || '' }}
+
+      - uses: actions/cache/save@v4
+        if: ${{ always() && hashFiles('tg_state.json') != '' }}
+        with:
+          path: tg_state.json
+          key: tg-state-${{ github.run_id }}
