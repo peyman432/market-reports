@@ -571,6 +571,117 @@ def split_title(report):
     return "گزارش", report
 
 
+def _kv(text):
+    """خطوط «• برچسب: مقدار» و «- برچسب: مقدار» یک گزارش متنی ← دیکشنری"""
+    d = {}
+    for ln in (text or "").split("\n"):
+        m = re.match(r"^\s*[•\-]\s*(.+?):\s*(.+?)\s*$", ln)
+        if m:
+            d.setdefault(m.group(1).strip(), m.group(2).strip())
+    return d
+
+
+def _sgn(v, d=0):
+    return f"{v:+,.{d}f}"
+
+
+def _num(txt):
+    m = re.search(r"-?[\d,]+(?:\.\d+)?", str(txt or ""))
+    return float(m.group(0).replace(",", "")) if m else None
+
+
+def _trend(x):
+    return "↗" if x > 0 else "↘" if x < 0 else "→"
+
+
+def status_text(h2):
+    """وضعیت کلی بازار: تصویر لحظه‌ای کوتاه (امتیاز، آمار، شاخص‌ها، جریان پول، روند امروز، دلایل، هشدارها)"""
+    a, last, kv = h2["a"], h2["last"], _kv(h2.get("report", ""))
+    money = lambda k: (kv.get(k) or "—").replace(" میلیارد تومان", "")
+    L = [f"📅 {h2['time']}", "",
+         "🎯 امتیاز بازار:",
+         f"• امتیاز کلی: {a['score']}/100 — {a['status']}",
+         f"• توصیه: {a['recommendation']}", "",
+         "📊 وضعیت بازار:",
+         f"• نمادها: مثبت {last['مثبت']:,.0f} | منفی {last['منفی']:,.0f} | بدون تغییر {last['صفر']:,.0f}",
+         f"• صف‌ها: خرید {last['صف_خرید']:,.0f} | فروش {last['صف_فروش']:,.0f} | خالص احساسات {a.get('net_sentiment', 0):+,.0f}",
+         f"• شاخص کل: {_sgn(last['شاخص_کل'], 2)}٪ | هم‌وزن: {_sgn(last['شاخص_هموزن'], 2)}٪", "",
+         "💰 ورود/خروج پول (میلیارد تومان):",
+         f"• کل بازار: {money('ورود یا خروج پول به کل بازار')}",
+         f"• سهام بزرگ: {money('ورود یا خروج پول به سهام بزرگ')}",
+         f"• صندوق‌های اهرمی: {money('ورود یا خروج پول به صندوق‌های اهرمی')}", ""]
+    gs = (h2.get("events") or {}).get("groups") or []
+    if gs:
+        L.append("🧭 روند امروز (تحرک خالص):")
+        for g in gs:
+            L.append(f"• {g['name']}: {_sgn(g['cur'])} (اوج {_sgn(g['peak'])} | ۳۰ دقیقه اخیر {_sgn(g['d30'])} {_trend(g['d30'])})")
+        L.append("")
+    L += ["🔍 عوامل امتیازدهی:"] + (a.get("factors") or ["— (هیچ عامل مثبتی فعال نیست)"]) + [""]
+    L += ["⚠️ هشدارها:"] + ([f"• {w}" for w in a["warnings"]] if a.get("warnings") else ["✅ هیچ هشداری وجود ندارد"])
+    if a.get("notes"):
+        L += ["", "💡 نکات تحلیلی:"] + [f"• {n}" for n in a["notes"]]
+    return "\n".join(L)
+
+
+def full_report_text(h2, h3):
+    """گزارش تحلیلی جامع: جزئیات تکنیکال، رویدادهای روز، سیگنال‌ها، صنایع و سهام برتر (بدون تکرار مطالب «وضعیت کلی»)"""
+    k2, L = _kv(h2.get("report", "")), []
+    g = lambda k: k2.get(k, "—")
+    L += [f"📅 {h2['time']}", "",
+          "📈 تحلیل تکنیکال:",
+          f"• شاخص قدرت نسبی (RSI): کل {g('کل بازار')} | بزرگ {g('سهام بزرگ')} | اهرمی {g('صندوق‌های اهرمی')}",
+          f"• میانگین قدرت خریدار: کل {g('میانگین قدرت کل')} | بزرگ {g('میانگین قدرت سهام بزرگ')} | صندوق‌ها {g('میانگین قدرت صندوق‌ها')}",
+          "• معاملات بزرگ (خرید / فروش): " + " | ".join(
+              f"بالای {n} {g(f'خرید بالای {n}')} / {g(f'فروش بالای {n}')}" for n in (100, 200, 500)),
+          f"• نسبت خرید به فروش درشت: {g('نسبت خرید به فروش')}", "",
+          "💎 شاخص‌های پیشرفته:",
+          f"• اطمینان {g('شاخص اطمینان')} | مومنتوم {g('مومنتوم بازار')} | نوسان {g('نوسان بازار')}",
+          f"• فشار نقدینگی {g('فشار نقدینگی')} | هماهنگی {g('هماهنگی بازار')} | قدرت نهادی {g('قدرت نهادی')}", ""]
+    ev = h2.get("events") or {}
+    if ev.get("groups"):
+        L.append("🧭 رویدادهای کلیدی روز:")
+        for e in ev["groups"]:
+            cross = f"عبور از صفر {str(e['cross_t'])[:5]}" if e.get("cross_t") else "بدون عبور از صفر"
+            pull = f" | افت از اوج {e['pull']:.0f}٪" if e.get("pull", 0) >= 10 else ""
+            L.append(f"• {e['name']}: اوج {_sgn(e['peak'])} ({str(e['peak_t'])[:5]}) | کف {_sgn(e['low'])} ({str(e['low_t'])[:5]}) | {cross}{pull}")
+        for n in ev.get("notes") or []:
+            L.append(f"• {n}")
+        L.append("")
+    if h3:
+        k3, rep3, c = _kv(h3.get("report", "")), h3.get("report", ""), h3.get("counts") or {}
+        n = c.get("n") or 1
+        pc = lambda v: f"{v:,} ({v * 100 / n:.1f}٪)"
+        L += [f"🎯 سیگنال‌های {n:,} سهم:",
+              f"• قوی خرید {pc(c.get('gold', 0))} | خرید {pc(c.get('strong_buy', 0))} | ضعیف خرید {pc(c.get('weak_buy', 0))}",
+              f"• خنثی {pc(c.get('neutral', 0))} | فروش {pc(c.get('sell', 0))}"]
+        k = lambda key: k3.get(key, "—")
+        vin, vout = _num(k("مجموع ورود پول")), _num(k("مجموع خروج پول"))
+        if vin is not None and vout is not None:
+            L += ["", "💰 جریان نقدینگی سهام (میلیون تومان):",
+                  f"• خالص: {_sgn(vin + vout)}",
+                  f"• ورود: {_sgn(vin)} در {k('تعداد سهام با ورود پول')} سهم",
+                  f"• خروج: {_sgn(vout)} در {k('تعداد سهام با خروج پول')} سهم"]
+        names = lambda hdr: re.findall(r"\[(.+?) \((?:امتیاز|امتیاز ریسک): (-?[\d.]+)\)\]",
+                                       (re.search(re.escape(hdr) + r"\s*\n(.+)", rep3) or [None, ""])[1])
+        buy, sell = names("🎯 سهام با قوی‌ترین سیگنال خرید:"), names("⚠️ سهام با سیگنال فروش:")
+        if buy:
+            L += ["", "🔥 قوی‌ترین سیگنال خرید:", "• " + "، ".join(x for x, _ in buy)]
+        if sell:
+            L += ["", "⚠️ سیگنال فروش و ریسک:", "• " + "، ".join(f"{x} ({y})" for x, y in sell)]
+        secs = h3.get("sectors") or []
+        if secs:
+            L += ["", "🏢 صنایع با بیشترین ورود پول (میلیون تومان):"]
+            L += [f"• {x['sector']}: {_sgn(x['vorod_pol'])} (امتیاز {x['quant_score']:.2f})" for x in secs[:5]]
+        ob, os_ = k("سهام با RSI اشباع خرید (>70)"), k("سهام با RSI اشباع فروش (<30)")
+        L += ["", "📊 RSI سهام:", f"• اشباع خرید (بالای ۷۰): {ob} سهم | اشباع فروش (زیر ۳۰): {os_} سهم"]
+        gold = h3.get("gold") or []
+        if gold:
+            L += ["", "⭐ برترین نمادها (امتیاز کوانت):"]
+            L += [f"• {r['name']}: امتیاز {r['quant_score']:.2f} | قدرت خریدار {r['buy_power']:.2f} | ورود پول {_sgn(r['vorod_pol'])}"
+                  for r in gold[:5]]
+    return "\n".join(L).strip()
+
+
 def update_notice(h2):
     last = (h2 or {}).get("time", "")
     body = "\n\n".join([
@@ -780,13 +891,12 @@ def build_items(d):
             if not isinstance(e, ValueError):
                 traceback.print_exc()
     if h2:
-        items += [("t_summary", "html", html_msgs("🎯 خلاصه وضعیت بازار", summary_text(h2)), None),
-                  ("t_events", "html", html_msgs("🧭 رویدادهای کلیدی روز", events_text(h2)), None)]
-        t, b2 = split_title(h2.get("report", ""))
-        items.append(("t_h2", "html", html_msgs(t, b2), None))
-    if h3:
-        t, b3 = split_title(h3.get("report", ""))
-        items.append(("t_h3", "html", html_msgs(t, b3), None))
+        try:
+            items.append(("t_status", "html", html_msgs("🎯 وضعیت کلی بازار", status_text(h2)), None))
+            items.append(("t_report", "html", html_msgs("📊 گزارش تحلیلی جامع بازار بورس", full_report_text(h2, h3)), None))
+        except Exception as e:
+            log("❌ متن‌های گزارش:", e)
+            traceback.print_exc()
     try:
         items.append(("t_disclaimer", "html", disclaimer_html(), None))
     except Exception as e:
@@ -843,6 +953,12 @@ def cycle():
         log("❌ TG_TOKEN و TG_CHAT تنظیم نشده‌اند")
         sys.exit(1)
     tg, st = TG(TOKEN, CHAT, PROXY), load_state(now.strftime("%Y-%m-%d"))
+    for old in ("t_summary", "t_events", "t_h2", "t_h3"):       # چهار متن قدیمی (جایگزین‌شده با دو متن ادغام‌شده)
+        it = st["items"].pop(old, None)
+        if it:
+            for mid in it["ids"]:
+                tg.delete(mid)
+            save_state(st)
     if RESET:
         n = 0
         for it in st["items"].values():
