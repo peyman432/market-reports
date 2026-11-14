@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>گزارشات آنلاین بازار</title>
+<script src="lib/chart.umd.js"></script>
+<style>
+@font-face{font-family:Vazirmatn;font-weight:400;font-display:swap;src:url(fonts/Vazirmatn-Regular.woff2) format("woff2")}
+@font-face{font-family:Vazirmatn;font-weight:700;font-display:swap;src:url(fonts/Vazirmatn-Bold.woff2) format("woff2")}
+:root{--bg:#15161a;--sf:#1e2025;--bd:#33353c;--ac:#3ea6ff;--tx:#f2f3f5;--t2:#9aa0ab;--up:#33d17a;--dn:#ff4d5e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:Vazirmatn,Tahoma,sans-serif;padding:12px;max-width:1300px;margin-inline:auto}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+h1{font-size:20px;margin:0}#hd{display:flex;flex-direction:column;gap:2px}#st,#adm{color:var(--t2);font-size:13px}#adm a{color:var(--ac);text-decoration:none;direction:ltr;unicode-bidi:embed}#adm a:hover{text-decoration:underline}
+nav{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
+nav button{background:var(--sf);color:var(--t2);border:1px solid var(--bd);border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
+nav button.on{background:var(--ac);color:#0a0a0a;border-color:var(--ac)}
+section{display:none}section.on{display:block}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:12px}
+.card,.kpi{background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.kpi small{color:var(--t2);display:block;font-size:12px}.kpi b{font-size:20px;direction:ltr;display:block;text-align:right}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:12px;margin-bottom:12px}
+.card h3{margin:0 0 8px;font-size:14px;color:var(--t2)}.cv{height:260px;position:relative}
+pre{white-space:pre-wrap;font:13px/1.8 Vazirmatn,Tahoma,sans-serif;margin:0;max-height:420px;overflow:auto}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;text-align:right;border-bottom:1px solid var(--bd);white-space:nowrap}th{color:var(--t2)}td.n{direction:ltr}
+#sb{display:flex;gap:6px;margin-bottom:12px}#sb input{flex:1;max-width:340px;background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font:inherit}
+#sb button,.chip{background:var(--ac);color:#0a0a0a;border:0;border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}.chip{background:var(--sf);color:var(--tx);border:1px solid var(--bd);margin:2px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}.sw{overflow-x:auto}
+#stk{display:none}#shsel{background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;font:inherit;margin-bottom:8px;min-width:200px}.g3{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:12px;margin-bottom:12px}
+.kv{display:flex;justify-content:space-between;gap:8px;padding:5px 0;border-bottom:1px dashed var(--bd);font-size:13px}.kv span{color:var(--t2)}.kv b{direction:ltr}
+.rec{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.badge{font-size:22px;font-weight:700;padding:10px 20px;border-radius:12px;color:#0a0a0a}
+nav button.sp{border-color:#33d17a;color:#33d17a}nav button.sp.on{background:#33d17a;color:#0a0a0a}#stk li{margin:4px 0;line-height:1.8}
+td a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--t2)}td a:hover{color:var(--ac)}.lk{display:inline-block;margin:4px 0 0 6px;padding:6px 12px;border-radius:8px;border:1px solid var(--bd);background:var(--sf);color:var(--tx);text-decoration:none;font-size:13px}.lk:hover{border-color:var(--ac);color:var(--ac)}
+#dbar{display:none;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 12px;padding:8px 12px;background:var(--sf);border:1px solid var(--bd);border-radius:12px}
+#dbar.hm{border-color:#f5c542}#dbar select{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:6px 10px;font:inherit}
+#dmode{color:#f5c542;font-weight:700;font-size:13px}
+.nanote{display:none;color:var(--t2)}section.na>*{display:none!important}section.na>.nanote{display:block!important}
+@media(max-width:760px){.pair{grid-template-columns:1fr}}
+@media(max-width:480px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>📊 گزارشات آنلاین بازار</h1><div id="hd"><span id="st">در حال بارگذاری...</span><span id="adm">ارتباط با مدیر سایت: <a href="https://t.me/p432m" target="_blank" rel="noopener">@p432m</a> (تلگرام)</span></div></header>
+<nav id="nav"></nav>
+<div id="dbar"><b>📅 تاریخ گزارش</b>
+ <button id="dprev" class="chip" title="روز معاملاتی قبل">▶ روز قبل</button>
+ <select id="dsel"></select>
+ <button id="dnext" class="chip" title="روز بعد">روز بعد ◀</button>
+ <button id="dlive" class="chip" style="display:none">⏺ بازگشت به امروز (زنده)</button>
+ <span id="dmode"></span>
+ <span style="margin-inline-start:auto"><small style="color:var(--t2)">بازه‌ی نمودارهای روزانه:</small>
+  <select id="nsel"><option value="20">۲۰ روز</option><option value="40" selected>۴۰ روز</option><option value="90">۹۰ روز</option><option value="0">همه</option></select></span></div>
+
+<section id="p0">
+ <div class="kpis" id="k2"></div>
+ <div class="grid">
+  <div class="card"><h3>🎯 خلاصه وضعیت بازار</h3><pre id="sum2"></pre></div>
+  <div class="card"><h3>وضعیت کلی نمادها</h3><div class="cv"><canvas id="c_status"></canvas></div></div>
+  <div class="card"><h3>روند مثبت / منفی / صف‌ها</h3><div class="cv"><canvas id="c_trend"></canvas></div></div>
+  <div class="card"><h3>شاخص قدرت نسبی (RSI)</h3><div class="cv"><canvas id="c_rsi"></canvas></div></div>
+ </div>
+ <div class="card"><h3>گزارش کامل hot2</h3><pre id="rep2"></pre></div>
+</section>
+
+<section id="p1">
+ <div class="grid">
+  <div class="card"><h3>ورود/خروج پول تجمعی (میلیارد تومان)</h3><div class="cv"><canvas id="c_cum"></canvas></div></div>
+  <div class="card"><h3>جریان پول هر ۱۵ دقیقه — ستونی</h3><div class="cv"><canvas id="c_half"></canvas></div></div>
+  <div class="card"><h3>جریان پول هر ۱۵ دقیقه — خطی</h3><div class="cv"><canvas id="c_halfl"></canvas></div></div>
+  <div class="card"><h3>شاخص کل و هم‌وزن (٪)</h3><div class="cv"><canvas id="c_idx"></canvas></div></div>
+  <div class="card"><h3>خالص معاملات درشت <small style="font-weight:400">(تعداد خرید − تعداد فروش، هر سفارش یک بار)</small></h3><div class="cv"><canvas id="c_heavy"></canvas></div></div>
+  <div class="card"><h3>تعداد خرید و فروش به تفکیک اندازه‌ی سفارش <small style="font-weight:400">(لحظه‌ای)</small></h3><div class="cv"><canvas id="c_cnt"></canvas></div></div>
+ </div>
+ <div class="pair"><div class="card"><h3>روند کلی بازار</h3><div class="cv"><canvas id="c_tall"></canvas></div></div>
+  <div class="card"><h3>تحرک خالص کلی بازار</h3><div class="cv"><canvas id="c_nall"></canvas></div></div></div>
+ <div class="pair"><div class="card"><h3>روند ۳۰ سهم بزرگ بازار</h3><div class="cv"><canvas id="c_tbig"></canvas></div></div>
+  <div class="card"><h3>تحرک خالص سهام بزرگ</h3><div class="cv"><canvas id="c_nbig"></canvas></div></div></div>
+ <div class="pair"><div class="card"><h3>روند صندوق‌های اهرمی</h3><div class="cv"><canvas id="c_tetf"></canvas></div></div>
+  <div class="card"><h3>تحرک خالص سهام اهرمی</h3><div class="cv"><canvas id="c_netf"></canvas></div></div></div>
+ <div class="grid">
+  <div class="card"><h3>نسبت خرید ÷ فروش درشت</h3><div class="cv"><canvas id="c_ratio"></canvas></div></div>
+  <div class="card"><h3>فشار ارزش صف خرید ÷ فروش</h3><div class="cv"><canvas id="c_qp"></canvas></div></div>
+  <div class="card"><h3>رویدادهای روز</h3><pre id="ev"></pre></div>
+ </div>
+</section>
+
+<section id="p2"><div class="card nanote">برای این تاریخ، داده‌ی مربوط به این بخش ذخیره نشده است.</div>
+ <div class="kpis" id="k3"></div>
+ <div style="color:var(--t2);font-size:12px;margin:-4px 0 10px">💡 با کلیک روی نام هر نماد (در جدول‌ها) یا روی ستون/نقطه‌ی آن در نمودارها، صفحه‌ی همان سهم در TSETMC باز می‌شود.</div>
+ <div class="grid">
+  <div class="card"><h3>توزیع وضعیت نمادها</h3><div class="cv"><canvas id="c_ver"></canvas></div></div>
+  <div class="card"><h3>بیشترین ورود پول</h3><div class="cv"><canvas id="c_in"></canvas></div></div>
+ </div>
+ <div class="grid">
+  <div class="card"><h3>بیشترین خالص معاملات درشت</h3><div class="cv"><canvas id="c_hv"></canvas></div></div>
+  <div class="card"><h3>ورود/خروج پول صنایع (میلیارد)</h3><div class="cv"><canvas id="c_sd"></canvas></div></div>
+  <div class="card"><h3>نقشه سیگنال (محور افقی: سیگنال تعدادی، عمودی: سیگنال درشت)</h3><div class="cv"><canvas id="c_sc"></canvas></div></div>
+  <div class="card"><h3>درصد آخرین معامله در برابر ورود پول</h3><div class="cv"><canvas id="c_qd"></canvas></div></div>
+  <div class="card"><h3>توزیع درصد آخرین معامله</h3><div class="cv"><canvas id="c_hist"></canvas></div></div>
+ </div>
+ <div class="card"><h3>🏆 برترین نمادها (امتیاز کوانت)</h3><div class="tw" id="t_gold"></div></div><br>
+ <div class="card"><h3>⚠️ پرریسک‌ترین نمادها</h3><div class="tw" id="t_risk"></div></div><br>
+ <div class="card"><h3>🏭 صنایع</h3><div class="tw" id="t_sec"></div></div><br>
+ <h3 style="color:var(--t2)">🔎 اسکنرهای کاربردی</h3>
+ <div class="grid" id="scans"></div>
+ <div class="card"><h3>گزارش کامل hot3</h3><pre id="rep3"></pre></div>
+</section>
+
+<section id="p3">
+ <div class="kpis" id="ksh"></div>
+ <div class="card"><h3>📊 وضعیت سهام من — درصد آخرین معامله و درصد پایانی</h3>
+  <div class="sw"><div id="shin" style="position:relative"><canvas id="c_sh"></canvas></div></div></div><br>
+ <div class="card"><h3>📋 جدول وضعیت سهام من</h3><div class="tw" id="t_sh"></div></div><br>
+ <div class="card"><h3>📈 چارت سهم (قیمت و درصد درون‌روزی)</h3><select id="shsel"></select><div class="cv" style="height:300px"><canvas id="c_shh"></canvas></div><div id="shact" style="margin-top:8px"></div></div>
+</section>
+<section id="p4"><div class="card nanote">برای این تاریخ، داده‌ی مربوط به این بخش ذخیره نشده است.</div>
+ <div id="sb"><input id="q" list="nm" placeholder="🔍 نام سهم را بنویسید (مثلاً دوایکس)"><button id="go">تحلیل سهم</button></div><datalist id="nm"></datalist>
+ <div class="card" id="stk_wait" style="color:var(--t2)">نام یک نماد را وارد کنید تا اطلاعات کامل، نمودارهای تحلیلی و پیشنهاد خرید یا فروش نمایش داده شود.</div>
+ <div id="stk">
+  <div class="card"><div class="rec" id="stk_head"></div></div><br>
+  <div class="g3" id="stk_kv"></div>
+  <div class="card"><h3>📈 چارت قیمت و درصد درون‌روزی</h3><div class="cv" style="height:300px"><canvas id="s0"></canvas></div><div id="s0l" style="margin-top:8px"></div></div><br>
+  <div class="grid">
+   <div class="card"><h3>وضعیت خرید و فروش (به تفکیک حجم)</h3><div class="cv"><canvas id="s1"></canvas></div></div>
+   <div class="card"><h3>نمای کلی سهم (۰ تا ۱۰۰)</h3><div class="cv"><canvas id="s2"></canvas></div></div>
+   <div class="card"><h3>توزیع حجم خرید و فروش</h3><div class="cv"><canvas id="s3"></canvas></div></div>
+   <div class="card"><h3>تعداد خریدار و فروشنده</h3><div class="cv"><canvas id="s4"></canvas></div></div>
+   <div class="card"><h3>سرانه خرید و فروش هر نفر (میلیون)</h3><div class="cv"><canvas id="s5"></canvas></div></div>
+   <div class="card" id="s6c"><h3>مقایسه حجم روزهای مختلف (٪)</h3><div class="cv"><canvas id="s6"></canvas></div></div>
+   <div class="card"><h3>مقایسه با همگروهی‌ها (امتیاز کوانت)</h3><div class="cv"><canvas id="s7"></canvas></div></div>
+   <div class="card"><h3>سهم شما در برابر بازار (جایگاه ۰ تا ۱۰۰)</h3><div class="cv"><canvas id="s8"></canvas></div></div>
+  </div>
+  <div class="card"><h3>🧠 تحلیل و دلایل پیشنهاد</h3><ul id="stk_a"></ul></div>
+  <div id="stk_alt" style="margin-top:8px"></div>
+ </div>
+</section>
+<section id="p5"><div class="card nanote">برای این تاریخ، داده‌ی مربوط به این بخش ذخیره نشده است.</div>
+ <div class="card" id="bw"></div><br>
+ <div class="g3" id="bl"></div>
+ <h3 style="color:var(--t2);margin:18px 0 4px">📶 سیگنال تعدادی</h3>
+ <small id="sg_note" style="color:var(--t2);display:block;margin-bottom:10px"></small>
+ <div class="g3" id="sg"></div><div id="sg_more" style="margin-bottom:12px"></div>
+ <div class="grid">
+  <div class="card"><h3>امتیاز ۱۰ سهم برتر خرید</h3><div class="cv"><canvas id="b1"></canvas></div></div>
+  <div class="card"><h3>مقایسه ۵ سهم برتر (۰ تا ۱۰۰)</h3><div class="cv"><canvas id="b2"></canvas></div></div>
+ </div>
+ <div class="card"><small style="color:var(--t2)">این فهرست خودکار است و از ترکیب امتیاز کوانت، جریان پول، قدرت خرید، RSI، معاملات درشت، برآیند خرید و فروش و اسکنرها ساخته می‌شود. توصیه مالی قطعی نیست؛ حجم ورود و حد ضرر را خودتان مدیریت کنید.</small></div>
+</section>
+
+<section id="p0h">
+ <div class="card nanote">برای این تاریخ، داده‌ی hot2 (جدول data_rooz) ذخیره نشده است.</div>
+ <div class="card" style="margin-bottom:12px;color:var(--t2);font-size:12px">ℹ️ برای روزهای قبل فقط یک عکس پایان‌روز از بازار ذخیره شده است؛ پس نمودارهای ساعتی فقط برای امروز موجودند. به‌جای آن، روند روزانه تا تاریخ انتخابی نمایش داده می‌شود (خط زرد نقطه‌چین = روز انتخابی).</div>
+ <div class="kpis" id="k2h"></div>
+ <div class="grid">
+  <div class="card"><h3>🎯 خلاصه‌ی روز</h3><pre id="sumh"></pre></div>
+  <div class="card"><h3>وضعیت کلی نمادها (پایان روز)</h3><div class="cv"><canvas id="h_status"></canvas></div></div>
+  <div class="card"><h3>روند روزانه‌ی مثبت / منفی / صف‌ها</h3><div class="cv"><canvas id="h_trend"></canvas></div></div>
+  <div class="card"><h3>شاخص قدرت نسبی (RSI) — روزانه</h3><div class="cv"><canvas id="h_rsi"></canvas></div></div>
+  <div class="card"><h3>شاخص کل و هم‌وزن (٪) — روزانه</h3><div class="cv"><canvas id="h_idx"></canvas></div></div>
+  <div class="card"><h3>میانگین قدرت خریدار — روزانه</h3><div class="cv"><canvas id="h_pw"></canvas></div></div>
+ </div>
+</section>
+<section id="p1h">
+ <div class="card nanote">برای این تاریخ، داده‌ی hot2 (جدول data_rooz) ذخیره نشده است.</div>
+ <div class="grid">
+  <div class="card"><h3>ورود/خروج پول (میلیارد تومان) — روزانه</h3><div class="cv"><canvas id="h_money"></canvas></div></div>
+  <div class="card"><h3>ورود/خروج خالص پول کل بازار هر روز</h3><div class="cv"><canvas id="h_mbar"></canvas></div></div>
+  <div class="card"><h3>خالص معاملات درشت <small style="font-weight:400">(تعداد خرید − تعداد فروش، هر سفارش یک بار)</small></h3><div class="cv"><canvas id="h_heavy"></canvas></div></div>
+  <div class="card"><h3>تعداد خرید و فروش به تفکیک اندازه‌ی سفارش <small style="font-weight:400">(روز انتخابی)</small></h3><div class="cv"><canvas id="h_cnt"></canvas></div></div>
+  <div class="card"><h3>نسبت خرید ÷ فروش درشت</h3><div class="cv"><canvas id="h_ratio"></canvas></div></div>
+  <div class="card"><h3>فشار ارزش صف خرید ÷ فروش</h3><div class="cv"><canvas id="h_qp"></canvas></div></div>
+  <div class="card"><h3>تحرک خالص کلی بازار</h3><div class="cv"><canvas id="h_nall"></canvas></div></div>
+  <div class="card"><h3>تحرک خالص سهام بزرگ و صندوق‌های اهرمی</h3><div class="cv"><canvas id="h_nbe"></canvas></div></div>
+ </div>
+</section>
+<section id="p3h"><div class="card" style="color:var(--t2)">بخش «سهام من» فقط برای امروز (زنده) موجود است و برای روزهای قبل ذخیره نمی‌شود. برای دیدن آن روی «⏺ بازگشت به امروز» بزنید.</div></section>
+
+
+<script>
+Chart.defaults.color='#f2f3f5';
+const $=s=>document.querySelector(s), C={}, UP='#33d17a', DN='#ff4d5e', AC='#3ea6ff';
+const f=(v,d=0,s=false)=>v==null||isNaN(v)?'-':(s&&v>0?'+':'')+Number(v).toLocaleString('en',{minimumFractionDigits:d,maximumFractionDigits:d});
+const col=v=>v>0?UP:v<0?DN:'';
+const L=(label,data,c,fill)=>({label,data,borderColor:c,backgroundColor:c+(fill?'33':''),borderWidth:2,tension:.2,fill:!!fill});
+const B=(data,c)=>({data,backgroundColor:c});
+
+Chart.register({id:'valueLabels',afterDatasetsDraw(c,_,o){
+  if(o===false)return;const t=c.config.type;if(t!=='bar'&&t!=='line')return;
+  const x=c.ctx,hz=c.options.indexAxis==='y';x.save();x.direction='ltr';x.font='11px Vazirmatn,Tahoma';x.fillStyle='#f2f3f5';
+  c.data.datasets.forEach((ds,i)=>{if(ds.borderDash||/^خط/.test(ds.label||''))return;const m=c.getDatasetMeta(i);if(m.hidden)return;
+    const fm=v=>f(v,Math.abs(v)>=100?0:2);
+    if(t==='bar'){if(m.data.length>45)return;m.data.forEach((b,j)=>{const v=ds.data[j];if(v==null||isNaN(v))return;
+      if(hz){x.textAlign=v>=0?'left':'right';x.textBaseline='middle';x.fillText(fm(v),b.x+(v>=0?4:-4),b.y)}
+      else{x.textAlign='center';x.textBaseline=v>=0?'bottom':'top';x.fillText(fm(v),b.x,b.y+(v>=0?-3:3))}})}
+    else{const j=ds.data.length-1,p=m.data[j],v0=ds.data[j],v=v0&&typeof v0==='object'?v0.y:v0;if(!p||v==null||isNaN(v))return;x.textAlign=p.x>c.chartArea.right-26?'right':'center';x.textBaseline='bottom';x.fillStyle=ds.borderColor||'#f2f3f5';x.font='bold 12px Vazirmatn,Tahoma';x.fillText(fm(v),p.x,p.y-6)}});
+  x.restore()}});
+const hm=v=>String(Math.floor(v/60)).padStart(2,'0')+':'+String(Math.round(v%60)).padStart(2,'0');
+const T0=540,T1=750; // ساعت شروع و پایان بازار: ۰۹:۰۰ تا ۱۲:۳۰ (به دقیقه)
+function ch(id,type,labels,sets,h,ex={}){
+  const isT=type==='line'&&labels&&labels.length&&/^\d{1,2}:\d{2}/.test(labels[0]);
+  if(isT){const mn=labels.map(l=>{const m=/^(\d{1,2}):(\d{2})/.exec(l);return m?+m[1]*60+ +m[2]:null});
+    sets=sets.map(ds=>({...ds,data:ds.data.map((v,i)=>({x:mn[i],y:v}))}));labels=undefined}
+  const x={ticks:{color:'#9aa0ab',maxTicksLimit:12},grid:{color:'#2a2c33'}},y={ticks:{color:'#9aa0ab'},grid:{color:'#2a2c33'}};
+  (type==='scatter'?[x,y]:type==='radar'||type==='pie'?[]:[h?x:y]).forEach(a=>a.ticks.callback=function(v,i,t){return '\u200E'+Chart.Ticks.formatters.numeric.call(this,v,i,t)});
+  if(type==='bar'||type==='line')(h?x:y).grace='15%';
+  if(type==='bar'&&!ex.skip){const c=h?y:x;c.ticks.autoSkip=false;delete c.ticks.maxTicksLimit;if(!h){c.ticks.maxRotation=60;c.ticks.minRotation=45}}
+  if(h&&labels)$('#'+id).parentElement.style.height=Math.max(260,labels.length*(ex.rowH||26)+70)+'px';
+  const cfg={type,data:{labels,datasets:sets},plugins:ex.plugins||[],options:{responsive:true,maintainAspectRatio:false,animation:false,layout:{padding:{top:20,right:h?44:30,left:6,bottom:2}},
+    indexAxis:h?'y':'x',elements:{point:{radius:0}},onClick:ex.onClick,onHover:ex.onClick?(e,els)=>{e.native.target.style.cursor=els.length?'pointer':'default'}:undefined,
+    plugins:{valueLabels:ex.noLabels?false:{},selMark:ex.sel==null?false:{idx:ex.sel},legend:{display:sets.length>1,labels:{color:'#9aa0ab'},...(ex.legend||{})},tooltip:{callbacks:{title:isT?it=>hm(it[0].parsed.x):undefined,label:c=>c.raw&&c.raw.name?`${c.raw.name}  (${f(c.raw.x,2)} , ${f(c.raw.y,2)})`:`${c.dataset.label?c.dataset.label+': ':''}${c.formatted}`}}},scales:isT?{...(ex.scales||{y}),x:{type:'linear',min:T0,max:T1,ticks:{color:'#9aa0ab',stepSize:30,autoSkip:false,callback:v=>'\u200E'+hm(v)},grid:{color:'#2a2c33'}}}:ex.scales===false?{}:(ex.scales||{x,y})}};
+  if(C[id]){C[id].data=cfg.data;C[id].update()}else C[id]=new Chart($('#'+id),cfg);
+}
+let HIST=null,CUR=null;
+const stk_=n=>D&&D.h3&&D.h3.stocks&&D.h3.stocks[n];
+const tseUrl=n=>{const r=stk_(n);return r&&r.inscode?`https://main.tsetmc.com/InstInfo/${r.inscode}`:null};
+const navUrl=n=>{const r=stk_(n);return r&&r.isin?`https://www.nahayatnegar.com/tv/${r.isin}`:null};
+const nl=n=>{const u=tseUrl(n);return u?`<a href="${u}" target="_blank" rel="noopener">${n}</a>`:n};
+const lnk=n=>{const a=navUrl(n),b=tseUrl(n);return (a?`<a class="lk" href="${a}" target="_blank" rel="noopener">📈 چارت کامل روزانه (نهایت‌نگر)</a>`:'')+(b?`<a class="lk" href="${b}" target="_blank" rel="noopener">🏛️ صفحه سهم در TSETMC</a>`:'')||'<small style="color:var(--t2)">کد نماد (ISIN / کد TSETMC) در داده‌ها پیدا نشد؛ لینک چارت کامل فعال نیست.</small>'};
+const openU=u=>{if(u)window.open(u,'_blank','noopener')};
+const openTse=(e,els,c)=>{if(els.length)openU(tseUrl(c.data.labels[els[0].index]))};
+const openTseP=(e,els,c)=>{if(!els.length)return;const p=c.data.datasets[els[0].datasetIndex].data[els[0].index];if(p&&p.name)openU(tseUrl(p.name))};
+function shSel(){const v=$('#shsel').value;if(!v)return;drawHist('c_shh',v);$('#shact').innerHTML=`<button class="chip" data-go="${v}">🔍 تحلیل کامل ${v}</button>`+lnk(v)}
+function drawHist(id,name){
+  const cv=$('#'+id);if(!cv)return;const wrap=cv.parentElement;
+  const e=!HM&&HIST&&HIST.s&&HIST.s[name],t=HIST&&HIST.t||[];
+  const ok=e&&e.p.filter(v=>v!=null).length>=2;
+  let n=wrap.querySelector('.hn');
+  if(!n){n=document.createElement('div');n.className='hn';n.style.cssText='position:absolute;inset:0;display:none;align-items:center;justify-content:center;color:#9aa0ab;font-size:13px;text-align:center;padding:8px;pointer-events:none';wrap.appendChild(n)}
+  if(!ok){if(C[id]){C[id].destroy();delete C[id]}n.textContent=HM?'چارت درون‌روزی برای روزهای قبل ذخیره نشده است':'داده‌ی کافی برای چارت نیست؛ چند دقیقه پس از شروع بازار (و اجرای ناشر) نمایش داده می‌شود';n.style.display='flex';return}
+  n.style.display='none';
+  const last=[...e.d].reverse().find(v=>v!=null)||0,pc=last>=0?UP:DN;
+  const x={ticks:{color:'#9aa0ab',maxTicksLimit:8},grid:{color:'#2a2c33'}};
+  ch(id,'line',t,[
+    {label:'قیمت',data:e.p,borderColor:AC,backgroundColor:AC,borderWidth:2,tension:.25,spanGaps:true,yAxisID:'y',pointRadius:0,pointHoverRadius:4},
+    {label:'درصد',data:e.d,borderColor:pc,borderWidth:1.5,borderDash:[4,3],tension:.25,spanGaps:true,yAxisID:'y1',pointRadius:0,pointHoverRadius:4,
+     fill:{target:{value:0},above:'rgba(51,209,122,.12)',below:'rgba(255,77,94,.12)'}}],false,
+    {noLabels:true,scales:{x,y:{position:'left',grace:'8%',ticks:{color:AC},grid:{color:'#2a2c33'}},y1:{position:'right',grace:'8%',ticks:{color:pc,callback:v=>'\u200E'+v+'%'},grid:{display:false}}}});
+}
+function kpis(el,items){
+  $(el).innerHTML=items.map(([t,v,c,s])=>`<div class="kpi"><small>${t}</small><b style="color:${c||'inherit'}">${v}</b><small>${s||''}</small></div>`).join('');
+}
+function table(el,heads,rows){
+  $(el).innerHTML='<table><tr>'+heads.map(h=>`<th>${h}</th>`).join('')+'</tr>'+
+    rows.map(r=>'<tr>'+r.map(c=>{const [t,cl]=Array.isArray(c)?c:[c,''];return `<td class="n" style="color:${cl||'inherit'}">${t}</td>`}).join('')+'</tr>').join('')+'</table>';
+}
+
+function showH2(d){
+  const a=d.a,l=d.last,s=d.s,t=d.t;
+  kpis('#k2',[
+   ['امتیاز کلی بازار',`${a.score} / 100`,a.status_color,a.status],
+   ['مثبت / منفی',`${f(l['مثبت'])} / ${f(l['منفی'])}`,col(a.net_sentiment),'خالص: '+f(a.net_sentiment,0,true)],
+   ['شاخص کل',f(l['شاخص_کل'],2,true)+'%',col(l['شاخص_کل'])],
+   ['شاخص هم‌وزن',f(l['شاخص_هموزن'],2,true)+'%',col(l['شاخص_هموزن'])],
+   ['ورود/خروج پول کل',f(l['پول_کل']/1000,1,true),col(l['پول_کل']),'میلیارد تومان'],
+   ['RSI کل بازار',f(l['rsi_کل'],1),l['rsi_کل']>70?DN:l['rsi_کل']<30?UP:'',a.rsi_status],
+   ['خرید ÷ فروش درشت',f(a.buy_sell_ratio,2),a.buy_sell_ratio>1?UP:DN,`خرید ${f(a.large_buys)} | فروش ${f(a.large_sells)}`],
+   ['صف خرید / فروش',`${f(l['صف_خرید'])} / ${f(l['صف_فروش'])}`,'','فشار نقدینگی: '+f(a.liquidity_pressure,1)]]);
+  $('#sum2').textContent=[`📅 ${d.time}`,'',`📊 امتیاز: ${a.score}/100 — ${a.status}`,`💡 ${a.recommendation}`,'','🔍 عوامل:',
+    ...(a.factors?.length?a.factors:['—']),'','⚠️ هشدارها:',...((a.warnings||[]).length?a.warnings.map(w=>'• '+w):['✅ هشداری نیست']),
+    ...((a.notes||[]).length?['','💡 نکات:',...a.notes.map(n=>'• '+n)]:[])].join('\n');
+  ch('c_status','bar',['مثبت','منفی','صف خرید','صف فروش','بدون تغییر'],
+     [B([l['مثبت'],l['منفی'],l['صف_خرید'],l['صف_فروش'],l['صفر']],['#2ecc71','#e74c3c','#27ae60','#c0392b','#95a5a6'])],false,{legend:{display:false}});
+  ch('c_trend','line',t,[L('مثبت',s.pos,'#33d17a'),L('منفی',s.neg,'#ff4d5e'),L('صف خرید',s.qb,'#3ea6ff'),L('صف فروش',s.qs,'#ff9f43')]);
+  ch('c_rsi','line',t,[L('کل بازار',s.rsi_all,AC),L('سهام بزرگ',s.rsi_big,'#9b59b6'),L('صندوق اهرمی',s.rsi_etf,'#e67e22')]);
+  $('#rep2').textContent=d.report;
+  ch('c_cum','line',t,[L('کل بازار',s.m_all,AC),L('سهام بزرگ',s.m_big,'#9b59b6'),L('صندوق اهرمی',s.m_etf,'#e67e22')]);
+  const SL=[];for(let m=T0+15;m<=T1;m+=15)SL.push(hm(m));
+  const hmap=Object.fromEntries(d.half.l.map((lb,i)=>[lb,d.half.v[i]])),hvv=SL.map(lb=>hmap[lb]??null);
+  ch('c_half','bar',SL,[B(hvv,hvv.map(v=>v>=0?UP:DN))]);
+  ch('c_idx','line',t,[L('شاخص کل',s.idx,AC),L('هم‌وزن',s.eq,'#f39c12')]);
+  ch('c_heavy','line',t,[{label:'خالص درشت',data:s.heavy_net,borderColor:AC,borderWidth:2,tension:.2,fill:{target:'origin',above:'rgba(51,209,122,.25)',below:'rgba(255,77,94,.25)'}},
+    {label:'خط صفر',data:t.map(()=>0),borderColor:'#9aa0ab',borderWidth:1,borderDash:[5,4],pointRadius:0}],false,{legend:{display:false}});
+  // گروه‌ها تو در تو هستند: ۱۰۰ تا ۲۰۰ = b100−b200 ، ۲۰۰ تا ۵۰۰ = b200−b500 ، بالای ۵۰۰ = b500
+  const bands=p=>l[p+'_100']==null?[null,null,null]:[l[p+'_100']-l[p+'_200'],l[p+'_200']-l[p+'_500'],l[p+'_500']],hb=bands('خرید'),hsl=bands('فروش');
+  if(hb.some(v=>v!=null))ch('c_cnt','bar',['۱۰۰ تا ۲۰۰','۲۰۰ تا ۵۰۰','بالای ۵۰۰'],[{label:'تعداد خرید',data:hb,backgroundColor:UP},{label:'تعداد فروش',data:hsl,backgroundColor:DN}]);
+  if(C.c_cnt){const tk=C.c_cnt.options.scales.x.ticks;tk.minRotation=0;tk.maxRotation=0;C.c_cnt.update()}
+  ch('c_ratio','line',t,[L('خرید ÷ فروش',s.ratio,'#16a085'),L('خط 1',t.map(()=>1),DN)]);
+  ch('c_qp','line',t,[L('فشار صف',s.qp,'#8e44ad'),L('خط 1',t.map(()=>1),DN)]);
+  const NET=(l,v)=>({label:l,data:v,borderColor:'#16a085',borderWidth:2,tension:.2,fill:{target:'origin',above:'rgba(46,204,113,.3)',below:'rgba(231,76,60,.3)'}});
+  const ZR={label:'خط صفر',data:t.map(()=>0),borderColor:DN,borderWidth:1.5,borderDash:[6,4],pointRadius:0};
+  ch('c_tall','line',t,[L('تحرک مثبت',s.tp,'#27ae60'),L('تحرک منفی',s.tn,'#c0392b')]);
+  ch('c_nall','line',t,[NET('تحرک خالص کلی بازار',s.net_all),ZR]);
+  ch('c_tbig','line',t,[L('تحرک مثبت سهام بزرگ',s.tpb,'#2980b9'),L('تحرک منفی سهام بزرگ',s.tnb,'#8e44ad')]);
+  ch('c_nbig','line',t,[NET('تحرک خالص سهام بزرگ',s.net_big),ZR]);
+  ch('c_tetf','line',t,[L('تحرک مثبت صندوق اهرمی',s.tpe,'#2980b9'),L('تحرک منفی صندوق اهرمی',s.tne,'#8e44ad')]);
+  ch('c_netf','line',t,[NET('تحرک خالص سهام اهرمی',s.net_etf),ZR]);
+  const hv=d.half.v,hc=hv.map(v=>v>=0?UP:DN);
+  const ptLab={id:'ptl',afterDatasetsDraw(c){const m=c.getDatasetMeta(0),x=c.ctx;x.save();x.direction='ltr';x.font='bold 11px Vazirmatn,Tahoma';x.textAlign='center';
+    m.data.forEach((p,j)=>{const v=hv[j];if(v==null)return;x.fillStyle=v>=0?UP:DN;x.textBaseline=v>=0?'bottom':'top';x.fillText(f(v,Math.abs(v)>=100?0:1,true),p.x,p.y+(v>=0?-8:8))});x.restore()}};
+  ch('c_halfl','line',d.half.l,[{label:'ورود/خروج پول',data:hv,borderColor:AC,borderWidth:2.5,tension:.35,pointRadius:4,pointHoverRadius:6,pointBackgroundColor:hc,pointBorderColor:hc,
+    segment:{borderColor:c=>(c.p0.parsed.y+c.p1.parsed.y)>=0?UP:DN},
+    fill:{target:'origin',above:'rgba(51,209,122,.22)',below:'rgba(255,77,94,.22)'}},
+    {label:'خط صفر',data:d.half.l.map(()=>0),borderColor:'#9aa0ab',borderWidth:1,borderDash:[5,4],pointRadius:0}],false,{noLabels:true,plugins:[ptLab],legend:{display:false}});
+  const ev=d.events||{};
+  $('#ev').textContent=[`⏰ ${d.time}`,'',...(ev.lines||[]),...((ev.notes||[]).length?['','💡 جمع‌بندی:',...ev.notes.map(n=>'• '+n)]:[])].join('\n');
+}
+
+function showH3(d){
+  const c=d.counts,V=d.colors,keys=Object.keys(V);
+  const pct=v=>`${f(v/Math.max(c.n,1)*100,1)}% از کل`;
+  kpis('#k3',[['تعداد نمادها',f(c.n)],['خرید طلایی',f(c.gold),keys[0]&&V[keys[0]],pct(c.gold)],
+    ['ورود پول معتبر',f(c.strong_buy+c.weak_buy),V[keys[1]],pct(c.strong_buy+c.weak_buy)],
+    ['خنثی',f(c.neutral),V[keys[2]],pct(c.neutral)],['ریسک خروج',f(c.sell),V[keys[3]],pct(c.sell)]]);
+  ch('c_ver','bar',d.verdicts.map(v=>v[0]),[B(d.verdicts.map(v=>v[2]),d.verdicts.map(v=>v[1]))],true);
+  ch('c_in','bar',d.inflow.l,[B(d.inflow.v,d.inflow.v.map(v=>v>=0?UP:DN))],true,{onClick:openTse});
+  const heads=['نماد','٪ آخرین','امتیاز کوانت','امتیاز سهم','قدرت خرید','سیگنال','سیگنال درشت','ورود پول','وضعیت'];
+  const rows=a=>a.map(r=>[nl(r.name),[f(r.darsad_akarin,2,true),col(r.darsad_akarin)],[f(r.quant_score,2),V[r.final_verdict]],
+    f(r.emtiaz_sahm,1),f(r.buy_power,2),f(r.signal_tedad),f(r.signal_big_m),[f(r.vorod_pol,0,true),col(r.vorod_pol)],[r.final_verdict,V[r.final_verdict]]]);
+  table('#t_gold',heads,rows(d.gold)); table('#t_risk',heads,rows(d.risk));
+  table('#t_sec',['صنعت','امتیاز کوانت','تغییر ٪','ورود پول','تعداد'],(d.sectors||[]).map(r=>[r.sector,f(r.quant_score,2),
+    [f(r.chg,2,true),col(r.chg)],[f(r.vorod_pol,0,true),col(r.vorod_pol)],f(r.cnt)]));
+  ch('c_hv','bar',d.heavy.l,[B(d.heavy.v,d.heavy.v.map(v=>v>=0?UP:DN))],true,{onClick:openTse});
+  ch('c_sd','bar',d.sec_div.l,[B(d.sec_div.v,d.sec_div.v.map(v=>v>=0?UP:DN))],true);
+  ch('c_sc','scatter',null,[{label:'نمادها',data:d.scatter.map(r=>({x:r.signal_tedad,y:r.signal_big_m,name:r.name})),
+    backgroundColor:d.scatter.map(r=>r.emtiaz_sahm>=0?UP:DN),pointRadius:d.scatter.map(r=>Math.min(Math.max(r.buy_power,.3),6)*2+4)}],false,{onClick:openTseP});
+  ch('c_qd','scatter',null,[{label:'نمادها',data:d.quad.map(r=>({x:r.darsad_akarin,y:r.vorod_pol,name:r.name})),
+    backgroundColor:d.quad.map(r=>r.vorod_pol>=0?UP:DN),pointRadius:4}],false,{onClick:openTseP});
+  ch('c_hist','bar',d.hist.l,[B(d.hist.v,['#c0392b','#e74c3c','#ff8a80','#95a5a6','#82e0aa','#2ecc71','#27ae60'])]);
+  const sd=[['hidden','🕵️ تجمع پنهان','قیمت ثابت یا منفی ولی پول هوشمند وارد می‌شود'],['distribution','🚨 هشدار توزیع','قیمت مثبت ولی پول در حال خروج است'],
+   ['buy_queue','🔥 صف خرید تأییدشده','صف خرید همراه با ورود پول و قدرت خریدار'],['sell_queue','🧊 صف فروش پرریسک','بیشترین خروج پول؛ خطر گیر افتادن'],
+   ['volume','📢 حجم مشکوک','حجم چند برابر میانگین همراه با ورود پول'],['rsi_rev','🌡️ نقاط برگشت RSI','RSI پایین با ورود پول، یا بالا با خروج پول']];
+  $('#scans').innerHTML=sd.map(([k,t,s])=>`<div class="card"><h3>${t}</h3><small style="color:var(--t2)">${s}</small><div class="tw" id="sc_${k}"></div></div>`).join('');
+  sd.forEach(([k])=>{const a=d.scanners[k]||[];
+    if(!a.length){$('#sc_'+k).innerHTML='<p style="color:var(--t2)">موردی یافت نشد</p>';return}
+    table('#sc_'+k,['نماد','٪ آخرین','ورود پول','قدرت خرید','RSI','حجم×'],a.map(r=>[nl(r.name),[f(r.darsad_akarin,2,true),col(r.darsad_akarin)],
+      [f(r.vorod_pol,0,true),col(r.vorod_pol)],f(r.buy_power,2),f(r.rsi),r.vol_x>0?f(r.vol_x,1):'—']))});
+  $('#rep3').textContent=d.report;
+}
+
+let SH={};
+function showSh(d){
+  const n=d.names.length,avg=n?d.last.reduce((a,b)=>a+b,0)/n:0;
+  SH={};d.names.forEach((m,i)=>SH[nz(m)]={last:d.last[i],final:d.final[i]});
+  kpis('#ksh',[['تعداد سهام من',f(n)],['مثبت (آخرین)',f(d.last.filter(v=>v>0).length),UP],
+    ['منفی (آخرین)',f(d.last.filter(v=>v<0).length),DN],['میانگین آخرین',f(avg,2,true)+'%',col(avg)]]);
+  const sw=$('#shin');sw.style.width='100%';sw.style.height='460px';
+  const lc=v=>v>=0?'#008000':'#8b0000',fc=v=>v>=0?'#32cd32':'#ff6347';
+  const lab={id:'vl',afterDatasetsDraw(c){const x=c.ctx;x.save();x.direction='ltr';x.font=(d.names.length>28?'9px':'11px')+' Vazirmatn,Tahoma';x.fillStyle='#f2f3f5';x.textBaseline='middle';
+    c.data.datasets.forEach((ds,i)=>c.getDatasetMeta(i).data.forEach((b,j)=>{const v=ds.data[j];if(v==null||isNaN(v))return;x.save();x.translate(b.x,b.y+(v>=0?-4:4));x.rotate(-Math.PI/2);x.textAlign=v>=0?'left':'right';x.fillText(f(v,2)+'%',0,0);x.restore()}));x.restore()}};
+  const lg=[['آخرین معامله مثبت','#008000'],['پایانی مثبت','#32cd32'],['آخرین معامله منفی','#8b0000'],['پایانی منفی','#ff6347']];
+  ch('c_sh','bar',d.names,[{label:'آخرین',data:d.last,backgroundColor:d.last.map(lc)},{label:'پایانی',data:d.final,backgroundColor:d.final.map(fc)}],false,
+    {noLabels:true,plugins:[lab],legend:{onClick:()=>{},labels:{color:'#f2f3f5',generateLabels:()=>lg.map(([text,c])=>({text,fillStyle:c,strokeStyle:c,lineWidth:0,fontColor:'#f2f3f5'}))}}});
+  if(C.c_sh){C.c_sh.options.scales.y.grace='35%';C.c_sh.update()}
+  const sel=$('#shsel'),pv=sel.value;
+  sel.innerHTML=d.names.map(m=>`<option value="${IDX[nz(m)]||m}">${m}</option>`).join('');
+  if(pv&&[...sel.options].some(o=>o.value===pv))sel.value=pv;
+  sel.onchange=shSel;shSel();
+  const A=D&&D.h3&&D.h3.stocks,nAll=A?Object.keys(A).length:0;
+  table('#t_sh',['نماد','٪ آخرین معامله','٪ پایانی','قیمت آخرین معامله','ورود پول','RSI','قدرت خرید','امتیاز سهم','پیشنهاد'],
+    d.names.map((m,i)=>{const k=A&&IDX[nz(m)],r=k&&A[k],J=r?judge(r,nAll):null;
+      return [nl(k||m),[f(d.last[i],2,true)+'%',col(d.last[i])],[f(d.final[i],2,true)+'%',col(d.final[i])],
+        r?f(g(r,'akharin_gh')):'-',r?[f(g(r,'vorod_pol'),0,true),col(g(r,'vorod_pol'))]:'-',
+        r?[f(g(r,'rsi'),0),g(r,'rsi')>=70?DN:g(r,'rsi')>0&&g(r,'rsi')<=30?UP:'']:'-',r?f(g(r,'buy_power'),2):'-',
+        r?f(g(r,'emtiaz_sahm'),1):'-',J?[`${J.lab} (${f(J.s,1,true)})`,J.c]:'-']}));
+}
+
+// ---------- تحلیل سهم ----------
+const nz=s=>String(s||'').replace(/ي/g,'ی').replace(/ك/g,'ک').replace(/[\u200c\s]/g,'').toLowerCase();
+let D=null,IDX={};
+const SCN={hidden:'تجمع پنهان',distribution:'هشدار توزیع',buy_queue:'صف خرید تأییدشده',sell_queue:'صف فروش پرریسک',volume:'حجم مشکوک',rsi_rev:'نقطه برگشت RSI'};
+const g=(r,k,d=0)=>r[k]==null||isNaN(r[k])?d:r[k];
+const cl=(v,a,b)=>Math.min(Math.max(v,a),b);
+const kv=(t,rows)=>`<div class="card"><h3>${t}</h3>${rows.map(([k,v,c])=>`<div class="kv"><span>${k}</span><b style="color:${c||'inherit'}">${v}</b></div>`).join('')}</div>`;
+
+function judge(r,n){
+  const F=[],add=(w,t)=>{if(w)F.push([w,t])};
+  const q=g(r,'quant_score'),bp=g(r,'buy_power'),vp=g(r,'vorod_pol'),rsi=g(r,'rsi'),bk=g(r,'barayand_kol'),bs=g(r,'barayand_saraneh'),
+        hv=g(r,'total_heavy_net'),dp=g(r,'darsad_akarin'),mr=g(r,'money_rank',n/2)/n,sc=r.scans||[];
+  add(q>=1?1.5:q>=.5?1:q<=-1?-1.5:q<=-.5?-1:0,`امتیاز کوانت ${f(q,2)} و رتبه ${f(r.rank)} از ${f(n)}`);
+  add(bp>=1.5?1:bp>=1?.5:bp<.7?-1:bp<1?-.5:0,`قدرت خرید ${f(bp,2)} (${bp>=1?'خریدار':'فروشنده'} غالب)`);
+  add(mr<=.15?1:vp>0?.5:mr>=.85?-1:vp<0?-.5:0,vp>=0?`ورود پول ${f(vp,0)} (رتبه ${f(r.money_rank)})`:`خروج پول ${f(vp,0)} (رتبه ${f(r.money_rank)})`);
+  add(rsi>=75?-1:rsi>=70?-.5:rsi>0&&rsi<=30?.5:0,rsi>=70?`RSI برابر ${f(rsi,0)}؛ نزدیک یا داخل اشباع خرید`:`RSI برابر ${f(rsi,0)}؛ اشباع فروش و احتمال بازگشت`);
+  add(bk>0?.75:bk<0?-.75:0,`برآیند کل خرید و فروش ${f(bk,0,true)}`);
+  add(bs>0?.25:bs<0?-.25:0,`برآیند سرانه ${f(bs,0,true)}`);
+  add(hv>0?.5:hv<0?-.5:0,`خالص معاملات درشت ${f(hv,0,true)}`);
+  if(dp>=1&&vp<0)add(-1,'واگرایی منفی: قیمت مثبت ولی پول در حال خروج است');
+  if(dp<=.5&&vp>0)add(.5,'قیمت ثابت یا ضعیف ولی پول وارد می‌شود (تجمع)');
+  if(/منفی/.test(r.vaziat||''))add(-.5,'وضعیت نماد: '+r.vaziat);else if(/مثبت/.test(r.vaziat||''))add(.5,'وضعیت نماد: '+r.vaziat);
+  const pg=g(r,'pool_gr');add(pg>0?.25:pg<0?-.25:0,`پول گروه ${f(pg,0,true)}`);
+  if(sc.includes('sell_queue'))add(-.75,'در اسکنر صف فروش پرریسک');
+  if(sc.includes('buy_queue'))add(.75,'در اسکنر صف خرید تأییدشده');
+  if(sc.includes('hidden'))add(.5,'در اسکنر تجمع پنهان');
+  if(sc.includes('distribution'))add(-.5,'در اسکنر هشدار توزیع');
+  const s=Math.round(cl(F.reduce((a,x)=>a+x[0],0),-5,5)*10)/10;
+  const [lab,c]=s>=3?['خرید قوی',UP]:s>=1.5?['خرید','#7bd88f']:s>-1.5?['نگهداری / خنثی','#f5c542']:s>-3?['کاهش / فروش','#ff9f43']:['فروش — ریسک بالا',DN];
+  const risk=(rsi>=75||s<=-3||sc.includes('sell_queue'))?['بالا',DN]:(s>=1.5&&rsi<70)?['پایین',UP]:['متوسط','#f5c542'];
+  const agree=F.length?Math.round(F.filter(x=>Math.sign(x[0])==Math.sign(s)).length/F.length*100):0;
+  return {s,lab,c,risk,agree,F};
+}
+
+function stockView(name){
+  const r=D.h3.stocks[name],all=D.h3.stocks,n=Object.keys(all).length,V=D.h3.colors,my=SH[nz(name)],J=judge(r,n);
+  $('#stk_wait').style.display='none';$('#stk').style.display='block';CUR=name;drawHist('s0',name);$('#s0l').innerHTML=lnk(name);
+  $('#stk_head').innerHTML=`<div><div style="font-size:22px;font-weight:700">${name}</div><small style="color:var(--t2)">${r.group_name||''} ${D.updated?' — '+D.updated:''}</small></div>
+    <div class="badge" style="background:${J.c}">${J.lab}</div>
+    <div><small style="color:var(--t2)">امتیاز پیشنهاد</small><div style="font-size:22px;font-weight:700;direction:ltr;color:${J.c}">${f(J.s,1,true)} / 5</div></div>
+    <div><small style="color:var(--t2)">سطح ریسک</small><div style="font-size:18px;font-weight:700;color:${J.risk[1]}">${J.risk[0]}</div></div>
+    <div><small style="color:var(--t2)">همسویی عوامل</small><div style="font-size:18px;font-weight:700">${J.agree}٪</div></div>
+    <div><small style="color:var(--t2)">وضعیت کوانت</small><div style="font-size:16px;font-weight:700;color:${V[r.final_verdict]}">${r.final_verdict}</div></div>`;
+  const hz=g(r,'hajm_emroz'),hl=hz>150?'حجم بالا':hz>=80?'حجم عادی':'حجم کم',rsi=g(r,'rsi'),bp=g(r,'buy_power'),dp=g(r,'darsad_akarin');
+  $('#stk_kv').innerHTML=
+   kv('📋 اطلاعات پایه',[['قیمت آخرین معامله',f(g(r,'akharin_gh'))],['٪ آخرین معامله',f(dp,2,true)+'%',col(dp)],['٪ پایانی',my?f(my.final,2,true)+'%':f(g(r,'darsad_payani'),2,true)+'%',col(my?my.final:g(r,'darsad_payani'))],
+     ['وضعیت',r.vaziat||'—'],['قدرت خرید',f(bp,2),bp>=1?UP:DN],['حجم امروز',f(hz)+'٪'],['گروه',r.group_name||'—']])+
+   kv('📈 تحلیل تکنیکال',[['RSI',`${f(rsi,0)} — ${rsi>=75?'اشباع خرید':rsi>=70?'نزدیک اشباع خرید':rsi>0&&rsi<=30?'اشباع فروش':'خنثی'}`,rsi>=70?DN:rsi>0&&rsi<=30?UP:''],
+     ['قدرت خرید',bp>=1.5?'قوی':bp>=1?'متوسط رو به بالا':bp>=.7?'متوسط':'ضعیف',bp>=1?UP:DN],['وضعیت حجم',`${hl}${r.vol_x>0?' ('+f(r.vol_x,1)+' برابر)':''}`],
+     ['ورود پول',f(g(r,'vorod_pol'),0,true),col(g(r,'vorod_pol'))],['سیگنال تعدادی / درشت',`${f(g(r,'signal_tedad'),1)} / ${f(g(r,'signal_big_m'),1)}`],
+     ['امتیاز سهم',f(g(r,'emtiaz_sahm'),1)],['امتیاز کوانت',f(g(r,'quant_score'),2),V[r.final_verdict]]])+
+   kv('💰 تحلیل بنیادی (حقیقی)',[['پول گروه',f(g(r,'pool_gr'),0,true),col(g(r,'pool_gr'))],['تعداد خریداران',f(g(r,'tedad_kharidar'))],['تعداد فروشندگان',f(g(r,'tedad_foroshamdeh'))],
+     ['سرانه خرید هر نفر',f(g(r,'seraneh_kharid'))],['سرانه فروش هر نفر',f(g(r,'seraneh_forosh'))],['کل خرید',f(g(r,'kol_kharid'))],['کل فروش',f(g(r,'kol_forosh'))],
+     ['برآیند سرانه',f(g(r,'barayand_saraneh'),0,true),col(g(r,'barayand_saraneh'))],['برآیند کل',f(g(r,'barayand_kol'),0,true),col(g(r,'barayand_kol'))]]);
+  // charts
+  const cnt=[g(r,'tedad_kh_100'),g(r,'tedad_fo_100'),g(r,'tedad_kh_200'),g(r,'tedad_fo_200'),g(r,'tedad_kh_500'),g(r,'tedad_fo_500')];
+  ch('s1','bar',['خرید 100','فروش 100','خرید 200','فروش 200','خرید 500','فروش 500'],[B(cnt,['#008000','#ff0000','#90ee90','#f08080','#006400','#8b0000'])],false,{legend:{display:false}});
+  const nm=(v,m)=>cl(v,0,m),mr=g(r,'money_rank',n/2),pc=k=>Math.round((1-(g(r,k,n/2)-1)/n)*100);
+  const bk=g(r,'barayand_kol'),tot=g(r,'kol_kharid')+g(r,'kol_forosh')+1;
+  ch('s2','radar',['امتیاز کوانت','ورود پول','قدرت خرید','RSI','خرید درشت','برآیند خرید'],[{label:name,data:[pc('rank'),pc('money_rank'),nm(bp/2*100,100),nm(rsi,100),cl(50+g(r,'total_heavy_net')*5,0,100),cl(50+bk/tot*100,0,100)],
+    backgroundColor:'rgba(62,166,255,.25)',borderColor:AC,pointBackgroundColor:AC}],false,
+    {scales:{r:{min:0,max:100,ticks:{color:'#9aa0ab',backdropColor:'transparent'},grid:{color:'#33353c'},angleLines:{color:'#33353c'},pointLabels:{color:'#f2f3f5'}}},legend:{display:false}});
+  const kb=g(r,'kol_kharid'),kf=g(r,'kol_forosh'),tt=Math.max(kb+kf,1);
+  ch('s3','pie',[`میزان خرید ${f(kb/tt*100,1)}%`,`میزان فروش ${f(kf/tt*100,1)}%`],[{data:[kb,kf],backgroundColor:['#008000','#ff0000'],borderColor:'#1e2025'}],false,{scales:false,legend:{display:true,position:'bottom',labels:{color:'#9aa0ab'}}});
+  ch('s4','bar',['خریداران','فروشندگان'],[B([g(r,'tedad_kharidar'),g(r,'tedad_foroshamdeh')],['#008000','#ff0000'])],false,{legend:{display:false}});
+  ch('s5','bar',['سرانه خرید','سرانه فروش'],[B([g(r,'seraneh_kharid'),g(r,'seraneh_forosh')],['#008000','#ff0000'])],false,{legend:{display:false}});
+  const vk=['hajm_emroz',...Object.keys(r).filter(k=>/^hajm/.test(k)&&k!='hajm_emroz'&&k!='hajm_mashkok')].filter(k=>r[k]!=null);
+  const vl={hajm_emroz:'امروز'};$('#s6c').style.display=vk.length>1?'block':'none';
+  if(vk.length>1)ch('s6','bar',vk.map(k=>vl[k]||k.replace('hajm_','')),[B(vk.map(k=>g(r,k)),['#ffd700','#add8e6','#f08080','#90ee90','#c39bd3'])],false,{legend:{display:false}});
+  const gr=Object.values(all).filter(x=>x.group_name&&x.group_name===r.group_name).sort((a,b)=>b.quant_score-a.quant_score).slice(0,12);
+  if(!gr.find(x=>x.name===name))gr.push(r);
+  ch('s7','bar',gr.map(x=>x.name),[B(gr.map(x=>x.quant_score),gr.map(x=>x.name===name?AC:'#6b7280'))],true,{legend:{display:false}});
+  ch('s8','bar',['امتیاز کوانت','ورود پول','قدرت خرید (رتبه)'],[B([pc('rank'),pc('money_rank'),Math.round((1-(Object.values(all).filter(x=>g(x,'buy_power')>bp).length)/n)*100)],[AC,'#9b59b6','#e67e22'])],false,{legend:{display:false},scales:{x:{ticks:{color:'#9aa0ab'},grid:{color:'#2a2c33'}},y:{min:0,grace:'15%',ticks:{color:'#9aa0ab'},grid:{color:'#2a2c33'}}}});
+  // texts
+  const pos=J.F.filter(x=>x[0]>0).sort((a,b)=>b[0]-a[0]),neg=J.F.filter(x=>x[0]<0).sort((a,b)=>a[0]-b[0]);
+  const a=[`<b style="color:${J.c}">نتیجه: ${J.lab} (امتیاز ${f(J.s,1,true)} از ۵)</b> — ریسک ${J.risk[0]}، همسویی عوامل ${J.agree}٪.`];
+  if(pos.length)a.push('🟢 <b>نقاط قوت:</b> '+pos.map(x=>x[1]).join('؛ ')+'.');
+  if(neg.length)a.push('🔴 <b>نقاط ضعف و ریسک:</b> '+neg.map(x=>x[1]).join('؛ ')+'.');
+  a.push(J.s>=1.5?'✅ جمع‌بندی: شرایط فعلی به نفع خریدار است؛ با مدیریت حجم و تعیین حد ضرر می‌توان به ورود تدریجی فکر کرد.':
+    J.s>-1.5?'⏸️ جمع‌بندی: سیگنال‌ها متناقض یا ضعیف است؛ صبر کردن و پیگیری تغییر جریان پول منطقی‌تر است.':
+    '⛔ جمع‌بندی: فشار فروش و خروج پول غالب است؛ ورود جدید پرریسک است و دارندگان سهم باید حد ضرر را مدنظر داشته باشند.');
+  if(r.scans&&r.scans.length)a.push('🔎 اسکنرها: '+r.scans.map(k=>SCN[k]).join('، ')+'.');
+  if(r.group_q!=null)a.push(`🏭 گروه ${r.group_name}: میانگین امتیاز ${f(r.group_q,2)}، سهم ${r.quant_score>r.group_q?'بهتر':'ضعیف‌تر'} از گروه است.`);
+  if(my)a.push(`⭐ در «سهام من»: آخرین ${f(my.last,2,true)}٪، پایانی ${f(my.final,2,true)}٪.`);
+  a.push('<span style="color:var(--t2)">این پیشنهاد خودکار و بر پایه قواعد ساده روی داده‌های لحظه‌ای است و توصیه مالی قطعی نیست؛ پیش از تصمیم، تحلیل شخصی و مدیریت ریسک را در نظر بگیرید.</span>');
+  $('#stk_a').innerHTML=a.map(t=>`<li>${t}</li>`).join('');
+  $('#stk_alt').innerHTML='';
+}
+function search(){
+  if(!D||!D.h3)return;const q=nz($('#q').value);if(!q)return;
+  const keys=Object.keys(IDX),ex=keys.filter(k=>k===q),m=ex.length?ex:keys.filter(k=>k.includes(q));
+  if(!m.length){$('#stk').style.display='none';$('#stk_wait').style.display='block';$('#stk_wait').textContent='❌ سهمی با این نام پیدا نشد';return}
+  stockView(IDX[m[0]]);
+  if(m.length>1)$('#stk_alt').innerHTML='<small style="color:var(--t2)">نتایج مشابه: </small>'+m.slice(1,13).map(k=>`<button class="chip" data-s="${IDX[k]}">${IDX[k]}</button>`).join('');
+}
+$('#go').onclick=search;$('#q').onkeydown=e=>{if(e.key==='Enter')search()};
+$('#stk').onclick=e=>{if(e.target.dataset.s){$('#q').value=e.target.dataset.s;stockView(e.target.dataset.s);scrollTo({top:0,behavior:'smooth'})}};
+
+// ---------- چی بخرم ----------
+function showBuy(d){
+  const all=d.h3.stocks,names=Object.keys(all),n=names.length,V=d.h3.colors;
+  const R=names.map(k=>({r:all[k],j:judge(all[k],n)}));
+  const ok=x=>x.j.s>0&&!(x.r.scans||[]).some(k=>k=='sell_queue'||k=='distribution')&&g(x.r,'rsi')<75;
+  const cand=R.filter(ok).sort((a,b)=>b.j.s-a.j.s||g(b.r,'quant_score')-g(a.r,'quant_score')||g(b.r,'vorod_pol')-g(a.r,'vorod_pol'));
+  const top=cand.slice(0,5),a=d.h2&&d.h2.a,ms=a?a.score:null;
+  $('#bw').innerHTML=`<b>🌐 شرایط بازار:</b> ${d.mk?d.mk:a?`امتیاز بازار ${ms} از ۱۰۰ — ${a.status}. ${ms>=60?'فضای کلی به نفع خریدار است.':ms>=40?'بازار خنثی است؛ ورود تدریجی و با حجم متعادل منطقی‌تر است.':'بازار ضعیف است؛ حتی برای سهام برتر، حجم ورود را کم کنید و حد ضرر بگذارید.'}`:'اطلاعات بازار در دسترس نیست.'}
+    <br><small style="color:var(--t2)">از میان ${f(n)} نماد بررسی شد؛ ${f(cand.length)} نماد شرایط پایه خرید را داشتند (امتیاز مثبت، بدون هشدار توزیع یا صف فروش و RSI زیر ۷۵).</small>`;
+  if(!top.length){$('#bl').innerHTML='<div class="card">در حال حاضر نمادی با شرایط مناسب خرید پیدا نشد؛ بهتر است صبر کنید.</div>';return}
+  for(let i=0;i<5;i++)if(C['bc'+i]){C['bc'+i].destroy();delete C['bc'+i]}
+  $('#bl').innerHTML=top.map((x,i)=>{const r=x.r,j=x.j,pos=j.F.filter(t=>t[0]>0).sort((p,q)=>q[0]-p[0]).slice(0,3),neg=j.F.filter(t=>t[0]<0).sort((p,q)=>p[0]-q[0]).slice(0,2),dp=g(r,'darsad_akarin');
+    const warn=[...neg.map(t=>t[1]),...(dp>=3.5?['قیمت نزدیک سقف مثبت است؛ ورود دیرهنگام ریسک دارد']:[]),...(g(r,'rsi')>=70?['RSI نزدیک اشباع خرید است']:[])];
+    return `<div class="card" style="border-color:${j.c}">
+     <div class="rec"><div class="badge" style="background:${j.c};font-size:20px;padding:6px 14px">#${i+1}</div>
+      <div><div style="font-size:20px;font-weight:700">${r.name}</div><small style="color:var(--t2)">${r.group_name||''}</small></div>
+      <div style="margin-inline-start:auto;text-align:left;direction:ltr"><b style="font-size:20px;color:${j.c}">${f(j.s,1,true)} / 5</b><br><small style="color:var(--t2)">${j.lab}</small></div></div>
+     <div class="kv"><span>٪ آخرین معامله</span><b style="color:${col(dp)}">${f(dp,2,true)}%</b></div>
+     <div class="kv"><span>ورود پول</span><b style="color:${col(g(r,'vorod_pol'))}">${f(g(r,'vorod_pol'),0,true)}</b></div>
+     <div class="kv"><span>قدرت خرید</span><b>${f(g(r,'buy_power'),2)}</b></div>
+     <div class="kv"><span>RSI</span><b>${f(g(r,'rsi'),0)}</b></div>
+     <div class="kv"><span>امتیاز کوانت</span><b>${f(g(r,'quant_score'),2)}</b></div>
+     <div class="kv"><span>امتیاز سهم</span><b>${f(g(r,'emtiaz_sahm'),1)}</b></div>
+     <div class="kv"><span>ریسک / همسویی عوامل</span><b style="color:${j.risk[1]}">${j.risk[0]} / ${j.agree}٪</b></div>
+     <div style="margin-top:8px;font-size:13px;line-height:1.8">🟢 ${pos.map(t=>t[1]).join('؛ ')}</div>
+     ${warn.length?`<div style="font-size:13px;line-height:1.8;color:#ff9f43">⚠️ ${warn.join('؛ ')}</div>`:''}
+     <div class="cv" style="height:170px;margin-top:8px"><canvas id="bc${i}"></canvas></div>
+     <div style="margin-top:8px"><button class="chip" data-go="${r.name}">تحلیل کامل ${r.name}</button>${lnk(r.name)}</div></div>`}).join('');
+  top.forEach((x,i)=>drawHist('bc'+i,x.r.name));
+  ch('b1','bar',cand.slice(0,10).map(x=>x.r.name),[B(cand.slice(0,10).map(x=>x.j.s),cand.slice(0,10).map((x,i)=>i<5?UP:'#6b7280'))],true,{legend:{display:false}});
+  const dm=r=>{const bk=g(r,'barayand_kol'),tt=g(r,'kol_kharid')+g(r,'kol_forosh')+1,pc=k=>Math.round((1-(g(r,k,n/2)-1)/n)*100);
+    return [pc('rank'),pc('money_rank'),cl(g(r,'buy_power')/2*100,0,100),cl(g(r,'rsi'),0,100),cl(50+g(r,'total_heavy_net')*5,0,100),cl(50+bk/tt*100,0,100)]};
+  const pal=['#33d17a','#3ea6ff','#f5c542','#c39bd3','#ff9f43'];
+  ch('b2','radar',['امتیاز کوانت','ورود پول','قدرت خرید','RSI','خرید درشت','برآیند خرید'],top.map((x,i)=>({label:x.r.name,data:dm(x.r),borderColor:pal[i],backgroundColor:pal[i]+'22',pointBackgroundColor:pal[i]})),false,
+    {scales:{r:{min:0,max:100,ticks:{color:'#9aa0ab',backdropColor:'transparent'},grid:{color:'#33353c'},angleLines:{color:'#33353c'},pointLabels:{color:'#f2f3f5'}}},legend:{display:true,labels:{color:'#9aa0ab'}}});
+}
+$('#shact').onclick=e=>{const s=e.target.dataset.go;if(s){$('#q').value=s;tab(4);stockView(s);scrollTo({top:0,behavior:'smooth'})}};
+let SGN=12;
+function showSig(d){
+  const all=d.h3.stocks,n=Object.keys(all).length,sf=v=>f(v,Number.isInteger(v)?0:1);
+  Object.keys(C).filter(k=>/^sg\d+$/.test(k)).forEach(k=>{C[k].destroy();delete C[k]});
+  const L=Object.values(all).filter(r=>g(r,'signal_tedad')>0).sort((a,b)=>g(b,'signal_tedad')-g(a,'signal_tedad')||g(b,'quant_score')-g(a,'quant_score')),sh=L.slice(0,SGN);
+  $('#sg_note').textContent=L.length?`${f(L.length)} سهم سیگنال تعدادی مثبت دارند؛ از بیشترین سیگنال به کمترین. ${HM?'زمان سیگنال برای روزهای قبل ذخیره نشده است.':'زمان سیگنال = اولین باری که امروز مثبت شدنش ثبت شده است.'}`:'در حال حاضر سهمی با سیگنال تعدادی مثبت وجود ندارد.';
+  $('#sg').innerHTML=sh.map((r,i)=>{const j=judge(r,n),dp=g(r,'darsad_akarin');
+    return `<div class="card" style="border-color:${j.c}">
+     <div class="rec"><div class="badge" style="background:${j.c};font-size:18px;padding:6px 12px">📶 ${sf(g(r,'signal_tedad'))}</div>
+      <div><div style="font-size:20px;font-weight:700">${r.name}</div><small style="color:var(--t2)">${r.group_name||''}</small></div>
+      <div style="margin-inline-start:auto;text-align:left;direction:ltr"><b style="font-size:18px;color:${j.c}">${f(j.s,1,true)} / 5</b><br><small style="color:var(--t2)">${j.lab}</small></div></div>
+     <div class="kv"><span>🕒 تاریخ و ساعت سیگنال</span><b>${r.sig_at?jt(r.sig_at):'—'}</b></div>
+     <div class="kv"><span>سیگنال تعدادی / درشت</span><b>${sf(g(r,'signal_tedad'))} / ${sf(g(r,'signal_big_m'))}</b></div>
+     <div class="kv"><span>٪ آخرین معامله</span><b style="color:${col(dp)}">${f(dp,2,true)}%</b></div>
+     <div class="kv"><span>ورود پول</span><b style="color:${col(g(r,'vorod_pol'))}">${f(g(r,'vorod_pol'),0,true)}</b></div>
+     <div class="kv"><span>قدرت خرید</span><b>${f(g(r,'buy_power'),2)}</b></div>
+     <div class="kv"><span>RSI</span><b>${f(g(r,'rsi'),0)}</b></div>
+     <div class="kv"><span>امتیاز کوانت / امتیاز سهم</span><b>${f(g(r,'quant_score'),2)} / ${f(g(r,'emtiaz_sahm'),1)}</b></div>
+     <div class="kv"><span>ریسک / همسویی عوامل</span><b style="color:${j.risk[1]}">${j.risk[0]} / ${j.agree}٪</b></div>
+     <div class="cv" style="height:170px;margin-top:8px"><canvas id="sg${i}"></canvas></div>
+     <div style="margin-top:8px"><button class="chip" data-go="${r.name}">تحلیل کامل ${r.name}</button>${lnk(r.name)}</div></div>`}).join('');
+  sh.forEach((r,i)=>drawHist('sg'+i,r.name));
+  $('#sg_more').innerHTML=L.length>SGN?`<button class="chip" id="sg_btn">نمایش بیشتر (${f(L.length-SGN)} سهم دیگر)</button>`:'';
+}
+$('#sg_more').onclick=e=>{if(e.target.id==='sg_btn'){SGN+=12;if(D&&D.h3)showSig(D)}};
+$('#sg').onclick=e=>{const s=e.target.dataset.go;if(s){$('#q').value=s;tab(4);stockView(s);scrollTo({top:0,behavior:'smooth'})}};
+$('#bl').onclick=e=>{const s=e.target.dataset.go;if(s){$('#q').value=s;tab(4);stockView(s);scrollTo({top:0,behavior:'smooth'})}};
+
+
+let HM=null,CT=0,LIVE=null,HDAYS=null,HLOAD=0;
+Chart.register({id:'selMark',afterDatasetsDraw(c,_,o){if(!o||o.idx==null||o.idx<0)return;const m=c.getDatasetMeta(0),p=m&&m.data[o.idx];if(!p)return;
+  const x=c.ctx,a=c.chartArea;x.save();x.strokeStyle='#f5c542';x.setLineDash([4,3]);x.lineWidth=1.5;x.beginPath();x.moveTo(p.x,a.top);x.lineTo(p.x,a.bottom);x.stroke();x.restore()}});
+const FD=new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn',{year:'numeric',month:'2-digit',day:'2-digit',timeZone:'UTC'});
+const WDF=new Intl.DateTimeFormat('fa-IR',{weekday:'long',timeZone:'UTC'});
+const dl=d=>String(d).replace(/-/g,'/');
+function j2g(d){const [y,m,dd]=d.split('-').map(Number),doy=m<=6?(m-1)*31+dd:186+(m-7)*30+dd;
+  for(let o=-4;o<=4;o++){const g=new Date(Date.UTC(y+621,2,21+doy-1+o,12));if(FD.format(g)===dl(d))return g}return null}
+const wd=d=>{try{const g=j2g(d);return g?WDF.format(g):''}catch(e){return ''}};
+const setNA=(id,on)=>$('#'+id).classList.toggle('na',!!on);
+const dayList=()=>(HDAYS&&HDAYS.days||[]).filter(r=>r.h2||r.h3).map(r=>r.d);
+function fillDates(){
+  const bar=$('#dbar');if(!HDAYS||!dayList().length){bar.style.display='none';return}
+  bar.style.display='flex';
+  const ds=(HDAYS.days).filter(r=>r.h2||r.h3).slice().reverse();
+  $('#dsel').innerHTML='<option value="live">⏺ امروز (زنده)</option>'+ds.map(r=>`<option value="${r.d}">${dl(r.d)} — ${wd(r.d)}${r.h2&&r.h3?'':r.h3?' (فقط hot3)':' (فقط hot2)'}</option>`).join('');
+  $('#dsel').value=HM||'live';
+}
+async function loadDays(force){
+  if(!force&&HDAYS&&Date.now()-HLOAD<600000)return;
+  try{const r=await fetch('history/days.json?'+Date.now());if(r.ok){HDAYS=await r.json();HLOAD=Date.now();fillDates()}}catch(e){}
+}
+function mkText(r){return r&&r.h2?`شرایط بازار در پایان روز: شاخص کل ${f(r.idx,2,true)}٪ | مثبت ${f(r.pos)} / منفی ${f(r.neg)} | صف خرید ${f(r.qb)} / صف فروش ${f(r.qs)} | ورود/خروج پول ${f(r.m/1000,0,true)} میلیارد تومان`:''}
+async function setDate(v){
+  if(!v||v==='live'){
+    HM=null;$('#dbar').classList.remove('hm');$('#dmode').textContent='';$('#dlive').style.display='none';$('#dsel').value='live';
+    ['p2','p4','p5','p0h','p1h'].forEach(i=>setNA(i,false));
+    if(LIVE)renderLive(LIVE);else await load();
+    tab(CT);return}
+  HM=v;
+  const row=(HDAYS&&HDAYS.days||[]).find(r=>r.d===v)||{d:v};
+  let h3=null;
+  if(row.h3){try{const r=await fetch(`history/h3_${v}.json`);if(r.ok)h3=await r.json()}catch(e){}}
+  if(HM!==v)return; // در همین فاصله تاریخ دیگری انتخاب شده
+  D={updated:'گزارش روز '+dl(v)+' ('+wd(v)+')',h3:h3,h2:null,mk:mkText(row)};
+  SH={};CUR=null;
+  $('#stk').style.display='none';$('#stk_wait').style.display='block';
+  $('#stk_wait').textContent='نام یک نماد را وارد کنید تا اطلاعات کامل، نمودارهای تحلیلی و پیشنهاد خرید یا فروش نمایش داده شود.';
+  if(h3&&h3.stocks){IDX={};Object.keys(h3.stocks).forEach(k=>IDX[nz(k)]=k);
+    $('#nm').innerHTML=Object.keys(h3.stocks).map(k=>`<option value="${k}">`).join('');
+    try{showH3(h3)}catch(e){console.error('h3',e)}
+    try{showBuy(D)}catch(e){console.error('buy',e)}
+    try{showSig(D)}catch(e){console.error('sig',e)}}
+  ['p2','p4','p5'].forEach(i=>setNA(i,!h3));
+  try{showHist(v)}catch(e){console.error('hist',e)}
+  $('#dbar').classList.add('hm');$('#dlive').style.display='';$('#dsel').value=v;
+  $('#dmode').textContent='📅 گزارش روز '+dl(v)+' — بروزرسانی خودکار متوقف است';
+  $('#st').textContent='گزارش روز '+dl(v)+' ('+wd(v)+')';
+  tab(CT);
+}
+function showHist(v){
+  Object.keys(C).filter(k=>/^h_/.test(k)).forEach(k=>{C[k].destroy();delete C[k]});
+  const all=(HDAYS&&HDAYS.days||[]).filter(r=>r.h2),idx=all.findIndex(r=>r.d===v);
+  setNA('p0h',idx<0);setNA('p1h',idx<0);
+  if(idx<0)return;
+  const nmax=+$('#nsel').value||0,W=all.slice(nmax?Math.max(0,idx-nmax+1):0,idx+1),r=all[idx],p=all[idx-1],si=W.length-1,lb=W.map(x=>dl(x.d));
+  const net=r.pos-r.neg,ratio=r.s100>0?r.b100/r.s100:null,pv=(k,d,sg)=>p?'روز قبل: '+f(p[k],d,sg):'';
+  kpis('#k2h',[
+    ['تاریخ گزارش',dl(r.d),'',`${wd(r.d)} — ثبت ${r.t||'-'}`],
+    ['مثبت / منفی',`${f(r.pos)} / ${f(r.neg)}`,col(net),'خالص: '+f(net,0,true)],
+    ['شاخص کل',f(r.idx,2,true)+'%',col(r.idx),pv('idx',2,true)],
+    ['شاخص هم‌وزن',f(r.eq,2,true)+'%',col(r.eq),pv('eq',2,true)],
+    ['ورود/خروج پول کل',f(r.m/1000,1,true),col(r.m),'میلیارد تومان'],
+    ['RSI کل بازار',f(r.rsi,1),r.rsi>70?DN:r.rsi<30?UP:'',pv('rsi',1)],
+    ['خرید ÷ فروش درشت',ratio==null?'-':f(ratio,2),ratio>1?UP:DN,`خرید ${f(r.b100)} | فروش ${f(r.s100)}`],
+    ['صف خرید / فروش',`${f(r.qb)} / ${f(r.qs)}`,r.qb>r.qs?UP:DN,'ارزش: '+f(r.qbv)+' / '+f(r.qsv)]]);
+  const rk=k=>all.filter(x=>x[k]!=null&&x[k]>r[k]).length+1,bull=(net>0)+(r.idx>0)+(r.m>0)+(ratio>1)+(r.qb>r.qs);
+  $('#sumh').textContent=[`📅 ${dl(r.d)} (${wd(r.d)}) — ساعت ثبت ${r.t||'-'}`,'',
+    `${bull>=4?'🟢 روز مثبت و خریدارمحور':bull<=1?'🔴 روز منفی و فروشنده‌محور':'🟠 روز خنثی یا ترکیبی'} (${bull} از ۵ شاخص مثبت: مثبت‌ها، شاخص کل، ورود پول، نسبت درشت، صف‌ها)`,'',
+    `📈 شاخص کل ${f(r.idx,2,true)}٪ | هم‌وزن ${f(r.eq,2,true)}٪`+(p?` — روز قبل: ${f(p.idx,2,true)}٪ / ${f(p.eq,2,true)}٪`:''),
+    `💰 ورود/خروج پول: کل ${f(r.m/1000,0,true)} | سهام بزرگ ${f(r.m_b/1000,0,true)} | اهرمی ${f(r.m_e/1000,0,true)} (میلیارد تومان)`,
+    `🟢 مثبت ${f(r.pos)} در برابر منفی ${f(r.neg)}؛ صف خرید ${f(r.qb)} در برابر صف فروش ${f(r.qs)}`,
+    `🏦 معاملات درشت: خرید ${f(r.b100)} / فروش ${f(r.s100)} — خالص ${f(r.b100-r.s100,0,true)}${ratio==null?'':' (نسبت '+f(ratio,2)+')'}`,
+    `🌡️ RSI: کل ${f(r.rsi,1)} | بزرگ ${f(r.rsi_b,1)} | اهرمی ${f(r.rsi_e,1)}`,'',
+    `🏁 رتبه‌ی ورود پول بین ${f(all.length)} روز ثبت‌شده: ${f(rk('m'))} | رتبه‌ی شاخص کل: ${f(rk('idx'))}`].join('\n');
+  const w=(k,fn)=>W.map(x=>fn?fn(x):x[k]),ZR=()=>({label:'خط صفر',data:W.map(()=>0),borderColor:'#9aa0ab',borderWidth:1,borderDash:[5,4],pointRadius:0}),
+    ONE=()=>({label:'خط 1',data:W.map(()=>1),borderColor:DN,borderWidth:1.5,pointRadius:0}),
+    sg=(a,b)=>(a==null||b==null)?null:a-b,rt=(a,b,m)=>b>0?Math.min(a/b,m):null,E={sel:si};
+  ch('h_status','bar',['مثبت','منفی','صف خرید','صف فروش','بدون تغییر'],[B([r.pos,r.neg,r.qb,r.qs,r.zero],['#2ecc71','#e74c3c','#27ae60','#c0392b','#95a5a6'])],false,{legend:{display:false}});
+  ch('h_trend','line',lb,[L('مثبت',w('pos'),UP),L('منفی',w('neg'),DN),L('صف خرید',w('qb'),AC),L('صف فروش',w('qs'),'#ff9f43')],false,E);
+  ch('h_rsi','line',lb,[L('کل بازار',w('rsi'),AC),L('سهام بزرگ',w('rsi_b'),'#9b59b6'),L('صندوق اهرمی',w('rsi_e'),'#e67e22')],false,E);
+  ch('h_idx','line',lb,[L('شاخص کل',w('idx'),AC),L('هم‌وزن',w('eq'),'#f39c12'),ZR()],false,E);
+  ch('h_pw','line',lb,[L('کل بازار',w('pw'),AC),L('سهام بزرگ',w('pw_b'),'#9b59b6'),L('صندوق اهرمی',w('pw_e'),'#e67e22')],false,E);
+  ch('h_money','line',lb,[L('کل بازار',w('m',x=>x.m/1000),AC),L('سهام بزرگ',w('m_b',x=>x.m_b/1000),'#9b59b6'),L('صندوق اهرمی',w('m_e',x=>x.m_e/1000),'#e67e22'),ZR()],false,E);
+  const mv=w('m',x=>x.m/1000);
+  ch('h_mbar','bar',lb,[B(mv,mv.map(v=>v>=0?UP:DN))],false,{sel:si,skip:true,noLabels:true,legend:{display:false}});
+  const hv=w('h',x=>sg(x.b100,x.s100));
+  ch('h_heavy','bar',lb,[B(hv,hv.map(v=>v>=0?UP:DN))],false,{sel:si,skip:true,noLabels:true,legend:{display:false}});
+  const bd=pf=>[r[pf+'100']-r[pf+'200'],r[pf+'200']-r[pf+'500'],r[pf+'500']];
+  ch('h_cnt','bar',['۱۰۰ تا ۲۰۰','۲۰۰ تا ۵۰۰','بالای ۵۰۰'],[{label:'تعداد خرید',data:bd('b'),backgroundColor:UP},{label:'تعداد فروش',data:bd('s'),backgroundColor:DN}]);
+  if(C.h_cnt){const tk=C.h_cnt.options.scales.x.ticks;tk.minRotation=0;tk.maxRotation=0;C.h_cnt.update()}
+  ch('h_ratio','line',lb,[L('خرید ÷ فروش',w('r',x=>rt(x.b100,x.s100,5)),'#16a085'),ONE()],false,E);
+  ch('h_qp','line',lb,[L('فشار صف',w('q',x=>rt(x.qbv,x.qsv,10)),'#8e44ad'),ONE()],false,E);
+  const NF=(l,v,c)=>({label:l,data:v,borderColor:c,borderWidth:2,tension:.2,fill:false});
+  ch('h_nall','line',lb,[{...NF('تحرک خالص کلی بازار',w('na',x=>sg(x.tp,x.tn)),'#16a085'),fill:{target:'origin',above:'rgba(46,204,113,.3)',below:'rgba(231,76,60,.3)'}},ZR()],false,E);
+  ch('h_nbe','line',lb,[NF('سهام بزرگ',w('nb',x=>sg(x.tpb,x.tnb)),'#9b59b6'),NF('صندوق‌های اهرمی',w('ne',x=>sg(x.tpe,x.tne)),'#e67e22'),ZR()],false,E);
+}
+$('#dsel').onchange=e=>setDate(e.target.value);
+$('#dlive').onclick=()=>setDate('live');
+$('#dprev').onclick=()=>{const L=dayList(),i=HM?L.indexOf(HM):L.length;if(i>0)setDate(L[i-1])};
+$('#dnext').onclick=()=>{if(!HM)return;const L=dayList(),i=L.indexOf(HM);setDate(i+1<L.length?L[i+1]:'live')};
+$('#nsel').onchange=()=>{if(HM)showHist(HM)};
+const tabs=['وضعیت بازار (hot2)','جریان پول و شاخص','کوانت و صنایع (hot3)','سهام من','🔍 تحلیل سهم','🛒 چی بخرم'];
+$('#nav').innerHTML=tabs.map((t,i)=>`<button data-i="${i}"${i>=4?' class="sp"':''}>${t}</button>`).join('');
+function tab(i){CT=i;const sid=HM?['p0h','p1h','p2','p3h','p4','p5'][i]:'p'+i;
+  document.querySelectorAll('nav button').forEach((b,j)=>b.classList.toggle('on',i==j));
+  document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id===sid));
+  Object.values(C).forEach(c=>c.resize());localStorage.setItem('tab',i)}
+$('#nav').onclick=e=>{if(e.target.dataset.i)tab(+e.target.dataset.i)};
+try{tab(+localStorage.getItem('tab')||0)}catch(e){tab(0)}
+
+function jt(u){
+  try{const m=/^(\d{4})-(\d\d)-(\d\d)[ T](\d\d:\d\d(?::\d\d)?)/.exec(u||'');if(!m)return u||'';
+    const dt=new Date(+m[1],+m[2]-1,+m[3],12);
+    const j=new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn',{year:'numeric',month:'2-digit',day:'2-digit'}).format(dt);
+    return j+' - '+m[4]}catch(e){return u}}
+function renderLive(d){
+  D=d;if(d.h3&&d.h3.stocks){IDX={};Object.keys(d.h3.stocks).forEach(k=>IDX[nz(k)]=k);
+    $('#nm').innerHTML=Object.keys(d.h3.stocks).map(k=>`<option value="${k}">`).join('')}
+  for(const [k,fn] of [['shamam',showSh],['h2',showH2],['h3',showH3]]){
+    if(d[k]) try{fn(d[k])}catch(e){console.error(k,e)}}
+  if(d.h3&&d.h3.stocks)try{showBuy(d)}catch(e){console.error('buy',e)}
+  if(d.h3&&d.h3.stocks)try{showSig(d)}catch(e){console.error('sig',e)}
+  const er=Object.entries(d.errors||{}).map(([k,v])=>`${k}: ${v}`).join(' | ');
+  $('#st').textContent='آخرین بروزرسانی: '+jt(d.updated)+(er?' ⚠️ '+er:'');
+}
+async function load(){
+  try{
+    const d=await (await fetch('data.json?'+Date.now())).json();
+    LIVE=d;loadDays(false);
+    if(HM)return; // در حالت «روزهای قبل» صفحه با داده‌ی زنده عوض نمی‌شود
+    try{const hr=await fetch('hist.json?'+Date.now());if(hr.ok)HIST=await hr.json()}catch(e){}
+    renderLive(d);
+  }catch(e){if(!HM)$('#st').textContent='❌ دریافت داده ناموفق بود'}
+}
+load();setInterval(load,30000);
+</script>
+</body>
+</html>
